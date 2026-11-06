@@ -77,4 +77,21 @@ class TranscriptAlignerTest {
 
         assertEquals("B", result.last().speaker)
     }
+
+    @Test
+    fun splitsAsrTextWhenSpeakerChangesInsideOneAsrSegment() {
+        val result = TranscriptAligner.align(
+            asrSegments = listOf(AsrSegment("first person second person", 0, 2_000)),
+            speakerSegments = listOf(
+                SpeakerSegment("A", 0, 1_000),
+                SpeakerSegment("B", 1_000, 2_000),
+            ),
+            durationMs = 2_000,
+        )
+
+        assertEquals(2, result.size)
+        assertEquals(listOf("A", "B"), result.map { it.speaker })
+        assertEquals("first person", result[0].text)
+        assertEquals("second person", result[1].text)
+    }
 }

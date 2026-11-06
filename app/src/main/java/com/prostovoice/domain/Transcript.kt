@@ -1,5 +1,7 @@
 package com.prostovoice.domain
 
+import kotlin.math.roundToInt
+
 data class TranscriptSegment(
     val speaker: String,
     val text: String,
@@ -44,17 +46,32 @@ object TranscriptAligner {
             }
         }
 
-        val aligned = asrSegments.mapIndexedNotNull { index, segment ->
+        val aligned = asrSegments.flatMapIndexed { index, segment ->
             val start = segment.startMs.coerceIn(0L, duration)
             val end = segment.endMs.coerceIn(0L, duration)
-            if (end <= start || segment.text.isBlank()) return@mapIndexedNotNull null
-            val speaker = selectSpeaker(
-                speakers = speakers,
-                start = start,
-                end = end,
-                preferTail = asrSegments.size > 1 && index == asrSegments.lastIndex,
-            )
-            TranscriptSegment(speaker, segment.text.trim(), start, end)
+            if (end <= start || segment.text.isBlank()) return@flatMapIndexed emptyList()
+            val boundaries = speakers.asSequence()
+                .map { it.startMs }
+                .filter { it > start && it < end }
+                .distinct()
+                .sorted()
+                .toList()
+            val wordCount = segment.text.trim().split(Regex("\\s+")).count { it.isNotBlank() }
+            val usableBoundaries = if (wordCount >= boundaries.size + 1) boundaries else emptyList()
+            val intervals = listOf(start) + usableBoundaries + listOf(end)
+            val pieces = splitText(segment.text, intervals.size - 1)
+            intervals.zipWithNext().mapIndexedNotNull { pieceIndex, (pieceStart, pieceEnd) ->
+                if (pieceEnd <= pieceStart) return@mapIndexedNotNull null
+                val text = pieces.getOrNull(pieceIndex)?.trim().orEmpty()
+                if (text.isBlank()) return@mapIndexedNotNull null
+                val speaker = selectSpeaker(
+                    speakers = speakers,
+                    start = pieceStart,
+                    end = pieceEnd,
+                    preferTail = asrSegments.size > 1 && index == asrSegments.lastIndex && pieceIndex == intervals.lastIndex - 2,
+                )
+                TranscriptSegment(speaker, text, pieceStart, pieceEnd)
+            }
         }
 
         val smoothed = smoothShortSwitches(aligned, shortSwitchThresholdMs.coerceAtLeast(0L))
@@ -90,6 +107,24 @@ object TranscriptAligner {
                 .thenByDescending { it.first.endMs })
             ?.first?.speaker
         return tail ?: majority
+    }
+
+    private fun splitText(text: String, pieces: Int): List<String> {
+        if (pieces <= 1) return listOf(text.trim())
+        val words = text.trim().split(Regex("\\s+")).filter(String::isNotBlank)
+        if (words.size <= 1) return listOf(text.trim())
+        return buildList {
+            var from = 0
+            repeat(pieces) { index ->
+                val remainingPieces = pieces - index
+                val remainingWords = words.size - from
+                val count = if (remainingPieces == 1) remainingWords
+                else maxOf(1, (remainingWords.toDouble() / remainingPieces).roundToInt())
+                val to = minOf(words.size, from + count)
+                add(words.subList(from, to).joinToString(" "))
+                from = to
+            }
+        }
     }
 
     private fun smoothShortSwitches(
