@@ -16,13 +16,16 @@
 - [x] ViewModel, progress/error состояния и TXT/JSON export через SAF созданы.
 - [x] Native boundary и fallback stub созданы.
 - [x] Alignment helper и JUnit-тесты добавлены.
+- [x] Gradle wrapper 8.7 создан.
+- [x] `assembleDebug` успешно выполнен на JDK 17; APK создан размером 9 495 037 байт.
+- [x] `test` успешно выполнен; debug/release unit test tasks прошли.
 - [ ] Whisper.cpp и sherpa-onnx.
 - [ ] Модели и лицензии на их распространение.
 - [ ] Тесты, CI, сборка APK и проверки устройства.
 - [ ] Точное ТЗ и окончательные продуктовые ограничения.
-- [ ] Проверка Gradle build: отсутствуют Gradle wrapper и JDK 17+.
+- [ ] Проверка native ABI: NDK и CMake не найдены.
 - [ ] Native toolchain: NDK и CMake не найдены.
-- [ ] Запуск JUnit/Compose tests.
+- [ ] Instrumented/Compose tests на эмуляторе или телефоне.
 
 ## Ожидаемое событие
 
