@@ -136,10 +136,11 @@ Java_com_prostovoice_nativebridge_NativePipeline_nativeDiarizePcm(
     config.embedding.num_threads = 2;
     config.embedding.provider = "cpu";
     config.clustering.num_clusters = 0;
-    config.clustering.threshold = 0.35f;
+    // Larger FastClustering distance thresholds produce fewer clusters.
+    config.clustering.threshold = 0.75f;
     config.clustering.compute_confidence = 1;
-    config.min_duration_on = 0.3f;
-    config.min_duration_off = 0.1f;
+    config.min_duration_on = 0.4f;
+    config.min_duration_off = 0.3f;
     __android_log_print(ANDROID_LOG_INFO, "ProstoVoiceDiarization",
                         "Creating diarizer: samples=%d duration_ms=%d segmentation=%s embedding=%s",
                         sample_count, static_cast<int>(sample_count * 1000LL / sample_rate),

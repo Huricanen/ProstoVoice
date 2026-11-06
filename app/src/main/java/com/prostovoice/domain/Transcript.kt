@@ -31,7 +31,7 @@ object TranscriptAligner {
         asrSegments: List<AsrSegment>,
         speakerSegments: List<SpeakerSegment>,
         durationMs: Long,
-        shortSwitchThresholdMs: Long = 700L,
+        shortSwitchThresholdMs: Long = 1_200L,
     ): List<TranscriptSegment> {
         val duration = durationMs.coerceAtLeast(0L)
         val speakers = speakerSegments.mapNotNull { segment ->
