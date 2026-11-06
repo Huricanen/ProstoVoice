@@ -59,3 +59,7 @@ Thumbs.db
 *.swo
 __pycache__/
 *.py[cod]
+
+# Large local model artifacts are provisioned separately from Git.
+models/
+!models/MODEL_MANIFEST.md
