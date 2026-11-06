@@ -9,6 +9,10 @@ ProstoVoice — планируемое Android-приложение для ло�
 - `README.md` описывает Android-приложение для transcription с timestamps и разными говорящими.
 - README упоминает Whisper base и sherpa-onnx.
 - Точная схема pipeline, форматы моделей, минимальная версия Android и способ фоновой обработки пока не подтверждены.
+- Создан минимальный Gradle Kotlin DSL-каркас с модулем `app`.
+- `MainActivity` использует Compose и SAF `OpenDocument` для выбора `audio/*`.
+- `app/src/main/java/com/prostovoice/domain/Transcript.kt` содержит модели transcript и сегмента.
+- `app/src/main/java/com/prostovoice/orchestration/TranscriptionOrchestrator.kt` задаёт границу будущего native pipeline и placeholder.
 
 ## Предварительная архитектура
 
@@ -16,4 +20,4 @@ ProstoVoice — планируемое Android-приложение для ло�
 
 ## Ограничения
 
-Репозиторий не содержит исходников, Gradle-конфигурации, AndroidManifest, тестов или CI. Нельзя подтвердить сборку, JNI, загрузку моделей, производительность и работу на устройстве.
+Репозиторий пока не содержит JNI-реализации, моделей, тестов или CI. Сборка не подтверждена: Gradle wrapper, JDK 17+, NDK и CMake недоступны в текущем окружении.

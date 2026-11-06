@@ -11,12 +11,14 @@
 
 ## Не начато или не подтверждено
 
-- [ ] Gradle/Android-проект.
-- [ ] AndroidManifest и исходный код.
+- [x] Минимальный Gradle/Android-проект и AndroidManifest созданы.
+- [x] Базовый Compose UI с SAF-пикером и placeholder orchestration создан.
 - [ ] Whisper.cpp и sherpa-onnx.
 - [ ] Модели и лицензии на их распространение.
 - [ ] Тесты, CI, сборка APK и проверки устройства.
 - [ ] Точное ТЗ и окончательные продуктовые ограничения.
+- [ ] Проверка Gradle build: отсутствуют Gradle wrapper и JDK 17+.
+- [ ] Native toolchain: NDK и CMake не найдены.
 
 ## Ожидаемое событие
 
