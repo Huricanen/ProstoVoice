@@ -17,17 +17,13 @@ fun Transcript.toTxt(): String = buildString {
 }
 
 fun Transcript.toJson(): String = buildString {
-    append("{\n")
-    append("  \"sourceName\": \"").append(escape(sourceName)).append("\",\n")
-    append("  \"durationMs\": ").append(durationMs).append(",\n")
-    append("  \"language\": ").append(language?.let { "\"${escape(it)}\"" } ?: "null").append(",\n")
-    append("  \"segments\": [")
+    append("{\n  \"transcript\": [")
     if (segments.isNotEmpty()) append("\n")
     segments.forEachIndexed { index, segment ->
-        append("    {\"speaker\": \"").append(escape(segment.speaker))
-        append("\", \"text\": \"").append(escape(segment.text))
-        append("\", \"startMs\": ").append(segment.startMs)
-        append(", \"endMs\": ").append(segment.endMs).append("}")
+        append("    {\"speaker_id\": \"").append(escape(segment.speaker))
+        append("\", \"start_ms\": ").append(segment.startMs)
+        append(", \"end_ms\": ").append(segment.endMs)
+        append(", \"text\": \"").append(escape(segment.text)).append("\"}")
         if (index != segments.lastIndex) append(",")
         append("\n")
     }
