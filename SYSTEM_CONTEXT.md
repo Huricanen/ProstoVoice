@@ -8,7 +8,7 @@ ProstoVoice — планируемое Android-приложение для ло�
 
 - `README.md` описывает Android-приложение для transcription с timestamps и разными говорящими.
 - README упоминает Whisper base и sherpa-onnx.
-- Точная схема pipeline, форматы моделей, минимальная версия Android и способ фоновой обработки пока не подтверждены.
+- Точная версия моделей, минимальная версия Android и целевые ABI пока не подтверждены.
 - Создан минимальный Gradle Kotlin DSL-каркас с модулем `app`.
 - `MainActivity` использует Compose и SAF `OpenDocument` для выбора `audio/*`.
 - `app/src/main/java/com/prostovoice/domain/Transcript.kt` содержит модели transcript и сегмента.
@@ -18,13 +18,13 @@ ProstoVoice — планируемое Android-приложение для ло�
 - `WavPcmAudioDecoder` поддерживает потоковое чтение PCM 16-bit WAV mono/stereo, downmix и resampling в 16 kHz mono.
 - `TranscriptionWorker` и `TranscriptionWorkRequest` задают offline WorkManager boundary для длительной обработки при свёрнутом приложении.
 
-## Предварительная архитектура
+## Архитектура базового уровня
 
-Планируется цепочка: SAF URI → локальная копия → декодирование в PCM → Whisper ASR и diarization → alignment → UI/export. Это рабочая гипотеза до получения ТЗ, а не принятое решение.
+Рабочая цепочка базового уровня: SAF URI → локальный декодер → 16 kHz mono PCM → Whisper ASR и diarization → alignment → UI/export. Все вычисления и модели должны находиться на Android-устройстве.
 
-## Предварительное уточнение сценариев
+## Сценарии и уровни результата
 
-Материалы от 2026-11-06 указывают на пакетный импорт как основной сценарий. RealTime должен проектироваться как отдельный режим поверх общего audio/ASR слоя и не должен блокировать импорт готовых файлов. Обсуждается переход с Whisper base на Whisper Large при тестовом устройстве с примерно 4 ГБ RAM; модель, квантование и фактический memory budget ещё не подтверждены.
+Материалы от 2026-11-06 закрепляют пакетный импорт как основной сценарий. RealTime и запись из интерфейса остаются после базового уровня. Командой предложен Whisper Large при тестовом устройстве с примерно 4 ГБ RAM; модель и квантование проверяются отдельным benchmark gate.
 
 Предварительный внешний контракт JSON:
 
@@ -45,4 +45,4 @@ ProstoVoice — планируемое Android-приложение для ло�
 
 ## Ограничения
 
-Репозиторий пока не содержит реальных Whisper/sherpa-onnx моделей, MP3/M4A decoder и CI. WorkManager пока вызывает placeholder orchestrator. Native build требует NDK и CMake; Java/Android build подтверждён на JDK 17.
+Репозиторий пока не содержит реальных Whisper/sherpa-onnx моделей и полного MP3/M4A пути. WorkManager пока вызывает placeholder orchestrator. Native build требует NDK и CMake; Java/Android build подтверждён на JDK 17.
