@@ -13,3 +13,89 @@ data class Transcript(
     val language: String? = null,
     val segments: List<TranscriptSegment> = emptyList(),
 )
+
+data class AsrSegment(
+    val text: String,
+    val startMs: Long,
+    val endMs: Long,
+)
+
+data class SpeakerSegment(
+    val speaker: String,
+    val startMs: Long,
+    val endMs: Long,
+)
+
+object TranscriptAligner {
+    fun align(
+        asrSegments: List<AsrSegment>,
+        speakerSegments: List<SpeakerSegment>,
+        durationMs: Long,
+        shortSwitchThresholdMs: Long = 700L,
+    ): List<TranscriptSegment> {
+        val duration = durationMs.coerceAtLeast(0L)
+        val speakers = speakerSegments.mapNotNull { segment ->
+            val start = segment.startMs.coerceIn(0L, duration)
+            val end = segment.endMs.coerceIn(0L, duration)
+            if (end > start && segment.speaker.isNotBlank()) {
+                segment.copy(startMs = start, endMs = end)
+            } else {
+                null
+            }
+        }
+
+        val aligned = asrSegments.mapNotNull { segment ->
+            val start = segment.startMs.coerceIn(0L, duration)
+            val end = segment.endMs.coerceIn(0L, duration)
+            if (end <= start || segment.text.isBlank()) return@mapNotNull null
+            val speaker = speakers
+                .map { it to overlap(start, end, it.startMs, it.endMs) }
+                .filter { it.second > 0L }
+                .maxWithOrNull(compareBy<Pair<SpeakerSegment, Long>> { it.second }.thenByDescending { it.first.startMs })
+                ?.first?.speaker
+                ?: "UNKNOWN"
+            TranscriptSegment(speaker, segment.text.trim(), start, end)
+        }
+
+        val smoothed = smoothShortSwitches(aligned, shortSwitchThresholdMs.coerceAtLeast(0L))
+        return mergeAdjacent(smoothed)
+    }
+
+    private fun overlap(startA: Long, endA: Long, startB: Long, endB: Long): Long =
+        (minOf(endA, endB) - maxOf(startA, startB)).coerceAtLeast(0L)
+
+    private fun smoothShortSwitches(
+        segments: List<TranscriptSegment>,
+        thresholdMs: Long,
+    ): List<TranscriptSegment> {
+        if (segments.size < 3 || thresholdMs == 0L) return segments
+        val result = segments.toMutableList()
+        for (index in 1 until result.lastIndex) {
+            val previous = result[index - 1]
+            val current = result[index]
+            val next = result[index + 1]
+            if (current.endMs - current.startMs <= thresholdMs &&
+                previous.speaker == next.speaker && current.speaker != previous.speaker
+            ) {
+                result[index] = current.copy(speaker = previous.speaker)
+            }
+        }
+        return result
+    }
+
+    private fun mergeAdjacent(segments: List<TranscriptSegment>): List<TranscriptSegment> {
+        val result = mutableListOf<TranscriptSegment>()
+        for (segment in segments) {
+            val previous = result.lastOrNull()
+            if (previous != null && previous.speaker == segment.speaker) {
+                result[result.lastIndex] = previous.copy(
+                    text = listOf(previous.text, segment.text).joinToString(" "),
+                    endMs = maxOf(previous.endMs, segment.endMs),
+                )
+            } else {
+                result += segment
+            }
+        }
+        return result
+    }
+}
