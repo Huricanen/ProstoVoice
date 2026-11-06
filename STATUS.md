@@ -13,12 +13,16 @@
 
 - [x] Минимальный Gradle/Android-проект и AndroidManifest созданы.
 - [x] Базовый Compose UI с SAF-пикером и placeholder orchestration создан.
+- [x] ViewModel, progress/error состояния и TXT/JSON export через SAF созданы.
+- [x] Native boundary и fallback stub созданы.
+- [x] Alignment helper и JUnit-тесты добавлены.
 - [ ] Whisper.cpp и sherpa-onnx.
 - [ ] Модели и лицензии на их распространение.
 - [ ] Тесты, CI, сборка APK и проверки устройства.
 - [ ] Точное ТЗ и окончательные продуктовые ограничения.
 - [ ] Проверка Gradle build: отсутствуют Gradle wrapper и JDK 17+.
 - [ ] Native toolchain: NDK и CMake не найдены.
+- [ ] Запуск JUnit/Compose tests.
 
 ## Ожидаемое событие
 

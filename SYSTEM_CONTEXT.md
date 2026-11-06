@@ -13,6 +13,8 @@ ProstoVoice — планируемое Android-приложение для ло�
 - `MainActivity` использует Compose и SAF `OpenDocument` для выбора `audio/*`.
 - `app/src/main/java/com/prostovoice/domain/Transcript.kt` содержит модели transcript и сегмента.
 - `app/src/main/java/com/prostovoice/orchestration/TranscriptionOrchestrator.kt` задаёт границу будущего native pipeline и placeholder.
+- `TranscriptionViewModel` связывает SAF-выбор файла с orchestration state, progress и error state.
+- `app/src/main/java/com/prostovoice/export/TranscriptExport.kt` содержит TXT/JSON serialization.
 
 ## Предварительная архитектура
 
@@ -20,4 +22,4 @@ ProstoVoice — планируемое Android-приложение для ло�
 
 ## Ограничения
 
-Репозиторий пока не содержит JNI-реализации, моделей, тестов или CI. Сборка не подтверждена: Gradle wrapper, JDK 17+, NDK и CMake недоступны в текущем окружении.
+Репозиторий пока не содержит реальных Whisper/sherpa-onnx моделей и CI. Сборка не подтверждена: Gradle wrapper, NDK и CMake недоступны в текущем окружении; Android Studio предоставляет JDK 25, но совместимость текущего AGP с ним ещё не проверена.
