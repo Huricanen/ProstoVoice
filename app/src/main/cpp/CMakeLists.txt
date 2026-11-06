@@ -2,6 +2,11 @@ cmake_minimum_required(VERSION 3.22.1)
 
 project(prostovoice_native LANGUAGES CXX)
 
+# Keep the debug APK debuggable while compiling the heavy Whisper/ggml code
+# with release optimizations. Unoptimized C++ makes on-device inference
+# impractically slow on ARM phones.
+set(CMAKE_BUILD_TYPE Release CACHE STRING "" FORCE)
+
 set(WHISPER_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(WHISPER_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(WHISPER_BUILD_SERVER OFF CACHE BOOL "" FORCE)
