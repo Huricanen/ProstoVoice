@@ -17,6 +17,7 @@ ProstoVoice — планируемое Android-приложение для ло�
 - `app/src/main/java/com/prostovoice/export/TranscriptExport.kt` содержит TXT serialization и JSON export с корневым `transcript`.
 - `WavPcmAudioDecoder` поддерживает потоковое чтение PCM 16-bit WAV mono/stereo, downmix и resampling в 16 kHz mono.
 - `TranscriptionWorker` и `TranscriptionWorkRequest` задают offline WorkManager boundary для длительной обработки при свёрнутом приложении.
+- `tools/evaluate_transcript.py` сравнивает два hackathon JSON и вычисляет WER/RTF.
 
 ## Архитектура базового уровня
 
