@@ -52,6 +52,7 @@
 - [x] 2026-11-07: короткие gaps между diarization-сегментами (до 1 секунды) теперь заполняются ближайшим speaker; `UNKNOWN` сохраняется для более длинных неподтверждённых участков.
 - [x] 2026-11-07: добавлены подробные native/Kotlin logs исходных ASR и diarization intervals для диагностики ошибочного speaker в финальной реплике; требуется повторный device run.
 - [x] 2026-11-07: confidence sherpa передаётся в alignment; низкоуверенный повторяющийся turn после паузы может переключаться на альтернативного известного speaker. Добавлен unit test для финального low-confidence turn.
+- [x] 2026-11-07: low-confidence turn correction перенесена после short-switch smoothing, чтобы сглаживание не отменяло исправленный финальный speaker.
 - [x] 2026-11-07: кластеризация настроена на threshold `0.75`, `min_duration_on=0.4s`, `min_duration_off=0.3s`; default alignment smoothing увеличен до 1.2s. Unit tests и debug APK повторно собраны успешно. Новый APK ещё не установлен на телефон.
 
 ## Зафиксированные входы от команды и ТЗ

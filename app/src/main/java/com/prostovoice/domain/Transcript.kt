@@ -82,9 +82,9 @@ object TranscriptAligner {
             }
         }
 
-        val repaired = repairLowConfidenceTurns(aligned, speakers)
-        val smoothed = smoothShortSwitches(repaired, shortSwitchThresholdMs.coerceAtLeast(0L))
-        return mergeAdjacent(smoothed)
+        val smoothed = smoothShortSwitches(aligned, shortSwitchThresholdMs.coerceAtLeast(0L))
+        val repaired = repairLowConfidenceTurns(smoothed, speakers)
+        return mergeAdjacent(repaired)
     }
 
     private fun overlap(startA: Long, endA: Long, startB: Long, endB: Long): Long =
