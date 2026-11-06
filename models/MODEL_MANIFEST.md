@@ -11,10 +11,10 @@ Model files are provisioned outside Git and are ignored by `.gitignore`.
 - SHA-256: `D75795ECFF3F83B5FAA89D1900604AD8C780ABD5739FAE406DE19F23ECD98AD1`
 - Status: downloaded and hash-checked on 2026-11-06; included in debug APK assets and extracted on first use.
 
-Runtime default: `models/whisper/ggml-large-v3-turbo-q5_0.bin` (574,041,195 bytes,
-SHA-256 `394221709CD5AD1F40C46E6031CA61BCE88931E6E088C188294C6D5A55FFA7E2`).
-The smaller multilingual base Q5 model remains available under `models/optional`
-as a fast fallback for constrained devices.
+Runtime default: `models/whisper/ggml-small-q5_1.bin` (190,085,487 bytes,
+SHA-256 `AE85E4A935D7A567BD102FE55AFC16BB595BDB618E11B2FC7591BC08120411BB`).
+Base Q5 and Large-v3 Turbo remain available under `models/optional` as fallback
+variants for speed or quality testing.
 
 The Gradle build reads this ignored local file from `models/whisper`, packages it as
 an uncompressed APK asset, and extracts it to app-private storage on first use.

@@ -54,7 +54,7 @@ class WhisperTranscriptionOrchestrator(
     }
 
     companion object {
-        const val DEFAULT_MODEL_FILE = "ggml-large-v3-turbo-q5_0.bin"
+        const val DEFAULT_MODEL_FILE = "ggml-small-q5_1.bin"
         private const val TAG = "ProstoVoiceWhisper"
     }
 }
