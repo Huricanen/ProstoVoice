@@ -19,6 +19,7 @@
 - [x] Gradle wrapper 8.7 создан.
 - [x] 2026-11-06: `gradlew.bat assembleDebug` успешно выполнен на Temurin JDK 17 с локальным Android SDK; APK создан размером 11 528 022 байта (`app/build/outputs/apk/debug/app-debug.apk`). Gradle предупредил, что AGP 8.5.2 тестировался до compileSdk 34 при `compileSdk = 35`.
 - [x] 2026-11-06: `gradlew.bat test` успешно выполнен; debug/release unit test tasks прошли.
+- [x] 2026-11-06: после подключения codec decoder, native boundary и JSON schema повторно выполнены `gradlew.bat test assembleDebug`; BUILD SUCCESSFUL, 69 задач, APK 11 528 022 байта.
 - [x] PCM 16-bit WAV decoder, mono downmix и 16 kHz resampling добавлены; unit tests проходят.
 - [x] Offline WorkManager request/worker с progress и fallback marker добавлен; unit tests проходят.
 - [ ] Whisper.cpp и sherpa-onnx.
