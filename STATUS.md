@@ -17,7 +17,7 @@
 - [x] Native boundary и fallback stub созданы.
 - [x] Alignment helper и JUnit-тесты добавлены.
 - [x] Gradle wrapper 8.7 создан.
-- [x] `assembleDebug` успешно выполнен на JDK 17; APK создан размером 9 495 037 байт.
+- [x] `assembleDebug` успешно выполнен на JDK 17; последний APK создан размером 11 528 022 байта.
 - [x] `test` успешно выполнен; debug/release unit test tasks прошли.
 - [x] PCM 16-bit WAV decoder, mono downmix и 16 kHz resampling добавлены; unit tests проходят.
 - [x] Offline WorkManager request/worker с progress и fallback marker добавлен; unit tests проходят.
