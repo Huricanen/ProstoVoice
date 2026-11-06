@@ -94,4 +94,18 @@ class TranscriptAlignerTest {
         assertEquals("first person", result[0].text)
         assertEquals("second person", result[1].text)
     }
+
+    @Test
+    fun fillsShortDiarizationGapWithNearestSpeaker() {
+        val result = TranscriptAligner.align(
+            asrSegments = listOf(AsrSegment("hello", 400, 450)),
+            speakerSegments = listOf(
+                SpeakerSegment("A", 0, 400),
+                SpeakerSegment("B", 450, 1_000),
+            ),
+            durationMs = 1_000,
+        )
+
+        assertEquals("B", result.single().speaker)
+    }
 }

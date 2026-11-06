@@ -90,7 +90,22 @@ object TranscriptAligner {
         val overlaps = speakers
             .map { it to overlap(start, end, it.startMs, it.endMs) }
             .filter { it.second > 0L }
-        if (overlaps.isEmpty()) return "UNKNOWN"
+        if (overlaps.isEmpty()) {
+            val previous = speakers
+                .filter { it.endMs <= start }
+                .maxByOrNull { it.endMs }
+            val next = speakers
+                .filter { it.startMs >= end }
+                .minByOrNull { it.startMs }
+            val previousGap = previous?.let { start - it.endMs } ?: Long.MAX_VALUE
+            val nextGap = next?.let { it.startMs - end } ?: Long.MAX_VALUE
+            val nearest = if (nextGap <= previousGap) next else previous
+            return if (nearest != null && minOf(previousGap, nextGap) <= 1_000L) {
+                nearest.speaker
+            } else {
+                "UNKNOWN"
+            }
+        }
         val majority = overlaps
             .maxWithOrNull(compareBy<Pair<SpeakerSegment, Long>> { it.second }
                 .thenByDescending { it.first.startMs })!!.first.speaker
