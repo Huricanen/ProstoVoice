@@ -23,12 +23,15 @@
 - [x] Offline WorkManager request/worker с progress и fallback marker добавлен; unit tests проходят.
 - [ ] Whisper.cpp и sherpa-onnx.
 - [ ] Модели и лицензии на их распространение.
+- [x] 2026-11-06: native boundary усилена валидацией входов и offline status JSON; реальный runtime ещё не подключён.
+- [x] 2026-11-06: MP3/M4A/AAC decoder добавлен через MediaExtractor/MediaCodec; device codec validation ещё не выполнена.
+- [x] 2026-11-06: JSON export приведён к корневому `transcript` контракту из ТЗ; unit tests проходят.
 - [x] 2026-11-06: APK установлен на AVD `Medium_Phone_API_37.0` через ADB и приложение запущено; `com.prostovoice` имеет активный процесс и resumed `MainActivity`. Сделан снимок стартового экрана для визуальной smoke-проверки.
 - [x] 2026-11-06: APK установлен на физический Poco X7 (`2412DPC0AG`, Android 16) через ADB; приложение запущено, `MainActivity` подтверждена как resumed.
 - [x] 2026-11-06: презентация хакатона и присланные изображения приняты как рабочее ТЗ базового уровня.
 - [ ] Проверка native ABI: NDK и CMake не найдены.
 - [ ] Native toolchain: NDK и CMake не найдены.
-- [ ] MP3/M4A decoder через MediaExtractor/MediaCodec.
+- [ ] Проверка MediaExtractor/MediaCodec на реальных MP3/M4A/AAC файлах на Android.
 - [ ] Подключить WorkManager к реальному orchestrator вместо placeholder.
 - [ ] Instrumented/Compose tests на эмуляторе или телефоне.
 

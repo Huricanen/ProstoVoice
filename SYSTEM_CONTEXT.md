@@ -14,7 +14,7 @@ ProstoVoice — планируемое Android-приложение для ло�
 - `app/src/main/java/com/prostovoice/domain/Transcript.kt` содержит модели transcript и сегмента.
 - `app/src/main/java/com/prostovoice/orchestration/TranscriptionOrchestrator.kt` задаёт границу будущего native pipeline и placeholder.
 - `TranscriptionViewModel` связывает SAF-выбор файла с orchestration state, progress и error state.
-- `app/src/main/java/com/prostovoice/export/TranscriptExport.kt` содержит TXT/JSON serialization.
+- `app/src/main/java/com/prostovoice/export/TranscriptExport.kt` содержит TXT serialization и JSON export с корневым `transcript`.
 - `WavPcmAudioDecoder` поддерживает потоковое чтение PCM 16-bit WAV mono/stereo, downmix и resampling в 16 kHz mono.
 - `TranscriptionWorker` и `TranscriptionWorkRequest` задают offline WorkManager boundary для длительной обработки при свёрнутом приложении.
 
@@ -45,4 +45,4 @@ ProstoVoice — планируемое Android-приложение для ло�
 
 ## Ограничения
 
-Репозиторий пока не содержит реальных Whisper/sherpa-onnx моделей и полного MP3/M4A пути. WorkManager пока вызывает placeholder orchestrator. Native build требует NDK и CMake; Java/Android build подтверждён на JDK 17.
+Репозиторий пока не содержит реальных Whisper/sherpa-onnx моделей. MP3/M4A путь реализован через Android codecs, но требует device validation. WorkManager пока вызывает placeholder orchestrator. Native build требует NDK и CMake; Java/Android build подтверждён на JDK 17.
