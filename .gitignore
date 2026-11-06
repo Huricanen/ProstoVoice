@@ -57,3 +57,5 @@ compile_commands.json
 Thumbs.db
 *.swp
 *.swo
+__pycache__/
+*.py[cod]
