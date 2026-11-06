@@ -19,6 +19,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -96,8 +97,12 @@ private fun ProstoVoiceApp() {
                 if (state.isProcessing) {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         CircularProgressIndicator()
-                        Text("Обработка…")
+                        Text("${state.processingStage}\n${formatElapsed(state.elapsedMs)}")
                     }
+                    LinearProgressIndicator(
+                        progress = { state.progress },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
                 state.errorMessage?.let { Text("Ошибка: $it", color = MaterialTheme.colorScheme.error) }
                 state.transcript?.let { transcript ->
@@ -116,6 +121,11 @@ private fun ProstoVoiceApp() {
             }
         }
     }
+}
+
+private fun formatElapsed(milliseconds: Long): String {
+    val totalSeconds = milliseconds.coerceAtLeast(0L) / 1_000L
+    return "Время: %02d:%02d".format(totalSeconds / 60L, totalSeconds % 60L)
 }
 
 @androidx.compose.runtime.Composable

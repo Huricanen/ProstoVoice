@@ -19,7 +19,12 @@ class WhisperTranscriptionOrchestrator(
     private val modelFileName: String = DEFAULT_MODEL_FILE,
 ) : TranscriptionOrchestrator {
     override suspend fun transcribe(uri: Uri): Transcript {
+        return transcribe(uri) { _, _ -> }
+    }
+
+    suspend fun transcribe(uri: Uri, onProgress: (Float, String) -> Unit): Transcript {
         check(NativePipeline.isAvailable) { "Native Whisper backend недоступен" }
+        onProgress(0.02f, "Подготовка модели")
         val model = runCatching { WhisperModelStore(context, modelFileName).ensureModel() }
             .getOrElse { error ->
                 throw IllegalStateException("Не удалось подготовить встроенную Whisper-модель", error)
@@ -32,6 +37,7 @@ class WhisperTranscriptionOrchestrator(
             chunk.samples.copyInto(samples, offset)
             offset += chunk.samples.size
         }
+        onProgress(0.10f, "Аудио декодировано")
         Log.i(TAG, "Decoded ${samples.size} samples (${samples.size / 16_000f}s), starting Whisper")
         val startedAt = System.nanoTime()
         val asr = mutableListOf<AsrSegment>()
@@ -52,11 +58,13 @@ class WhisperTranscriptionOrchestrator(
                     item.optLong("end_ms") + offsetMs,
                 )
             }
+            onProgress(0.10f + 0.65f * (index + 1).toFloat() / inferenceChunks.size, "Распознавание речи")
         }
         val deduplicatedAsr = AudioChunker.deduplicateAsrSegments(asr)
         Log.i(TAG, "Whisper finished in ${(System.nanoTime() - startedAt) / 1_000_000} ms across ${inferenceChunks.size} chunks")
         val durationMs = samples.size * 1_000L / 16_000L
         val speakerSegments = runCatching {
+            onProgress(0.80f, "Разделение по говорящим")
             val segmentation = WhisperModelStore(context, SEGMENTATION_MODEL).ensureModel()
             val embedding = WhisperModelStore(context, EMBEDDING_MODEL).ensureModel()
             val diarization = JSONObject(
@@ -76,6 +84,7 @@ class WhisperTranscriptionOrchestrator(
             Log.w(TAG, "Diarization unavailable; using UNKNOWN speakers", error)
             emptyList()
         }
+        onProgress(0.98f, "Сборка результата")
         return Transcript(
             sourceName = uri.lastPathSegment ?: "audio",
             durationMs = durationMs,

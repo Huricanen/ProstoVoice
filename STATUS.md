@@ -46,6 +46,7 @@
 - [ ] Повторить обработку на Poco X7 с новым APK и собрать logcat по тегу `ProstoVoiceDiarization`; реальный runtime diarization пока не подтверждён.
 - [x] 2026-11-07: добавлено сохранение последнего transcript в app-private `files/last_transcript.json` с восстановлением после перезапуска; запись выполняется атомарно через временный файл.
 - [x] 2026-11-07: длинные записи разбиваются для Whisper на последовательные 30-секундные окна с 2-секундным overlap; timestamps переводятся в абсолютное время, дубли overlap удаляются. Diarization пока выполняется на полном PCM для сохранения согласованных speaker labels.
+- [x] 2026-11-07: UI показывает elapsed timer, текущий этап и determinate progress по этапам decode/Whisper chunks/diarization/finalisation.
 - [x] 2026-11-07: кластеризация настроена на threshold `0.75`, `min_duration_on=0.4s`, `min_duration_off=0.3s`; default alignment smoothing увеличен до 1.2s. Unit tests и debug APK повторно собраны успешно. Новый APK ещё не установлен на телефон.
 
 ## Зафиксированные входы от команды и ТЗ
