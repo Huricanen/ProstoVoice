@@ -15,4 +15,12 @@ The APK does not package this file yet. Native integration and a model-path prov
 
 ## Diarization
 
-Segmentation and speaker embedding models are not provisioned yet. Candidate repositories must be checked for ONNX input/output compatibility and licenses before download.
+- Candidate segmentation export: `models/diarization/pyannote-segmentation-3.0-int8.onnx`
+- Source: `https://huggingface.co/onnx-community/pyannote-segmentation-3.0`
+- Size: 1,542,304 bytes
+- SHA-256: `465D0975BF70FBF14FB77C0589A5D346A9C07C2170345F529CF774678446DB76`
+- Status: downloaded on 2026-11-06 for compatibility inspection; not wired into runtime yet.
+
+Speaker embedding model and sherpa-onnx runtime are still pending. Do not treat this
+segmentation export as a complete diarization pipeline until its ONNX signature,
+embedding model, clustering and licenses are verified together.
