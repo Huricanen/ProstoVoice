@@ -34,6 +34,7 @@
 - [x] 2026-11-06: добавлен `tools/evaluate_transcript.py` для WER/RTF по hackathon JSON; `py_compile` и CLI help проходят.
 - [x] 2026-11-06: APK установлен на AVD `Medium_Phone_API_37.0` через ADB и приложение запущено; `com.prostovoice` имеет активный процесс и resumed `MainActivity`. Сделан снимок стартового экрана для визуальной smoke-проверки.
 - [x] 2026-11-06: APK установлен на физический Poco X7 (`2412DPC0AG`, Android 16) через ADB; приложение запущено, `MainActivity` подтверждена как resumed.
+- [x] 2026-11-06: свежий debug APK после `assembleDebug` (592 133 109 байт, SHA-256 `C3D5ABF994C3CED000D7F0BBEE6A782F1A23FB18DC3DEEC258A9EA7AF62E51E4`) установлен на Poco X7 и запущен.
 - [x] 2026-11-06: презентация хакатона и присланные изображения приняты как рабочее ТЗ базового уровня.
 - [x] 2026-11-06: arm64-v8a native library builds with installed NDK 27.2.12479018 and CMake 3.22.1.
 - [ ] Проверка MediaExtractor/MediaCodec на реальных MP3/M4A/AAC файлах на Android.
