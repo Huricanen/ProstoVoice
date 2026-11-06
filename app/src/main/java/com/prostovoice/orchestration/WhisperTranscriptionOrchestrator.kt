@@ -78,7 +78,10 @@ class WhisperTranscriptionOrchestrator(
                 for (index in 0 until segments.length()) {
                     val item = segments.getJSONObject(index)
                     add(com.prostovoice.domain.SpeakerSegment(
-                        item.optString("speaker"), item.optLong("start_ms"), item.optLong("end_ms"),
+                        speaker = item.optString("speaker"),
+                        startMs = item.optLong("start_ms"),
+                        endMs = item.optLong("end_ms"),
+                        confidence = item.optDouble("confidence", 1.0).toFloat(),
                     ))
                     Log.i(TAG, "Speaker segment=${item.optString("speaker")} start=${item.optLong("start_ms")} end=${item.optLong("end_ms")}")
                 }

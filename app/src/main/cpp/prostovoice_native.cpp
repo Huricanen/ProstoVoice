@@ -201,7 +201,8 @@ Java_com_prostovoice_nativebridge_NativePipeline_nativeDiarizePcm(
         if (i > 0) json += ',';
         json += "{\"start_ms\":" + std::to_string(static_cast<int>(segments[i].start * 1000)) +
                 ",\"end_ms\":" + std::to_string(static_cast<int>(segments[i].end * 1000)) +
-                ",\"speaker\":\"speaker_" + std::to_string(segments[i].speaker + 1) + "\"}";
+                ",\"speaker\":\"speaker_" + std::to_string(segments[i].speaker + 1) +
+                "\",\"confidence\":" + std::to_string(segments[i].confidence) + "}";
     }
     json += "]}";
     SherpaOnnxOfflineSpeakerDiarizationDestroySegment(segments);
