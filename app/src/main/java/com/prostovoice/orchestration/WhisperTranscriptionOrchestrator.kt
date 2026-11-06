@@ -52,13 +52,11 @@ class WhisperTranscriptionOrchestrator(
             val segments = response.optJSONArray("segments") ?: return@forEachIndexed
             for (segmentIndex in 0 until segments.length()) {
                 val item = segments.getJSONObject(segmentIndex)
-                val asrSegment = AsrSegment(
+                asr += AsrSegment(
                     item.optString("text"),
                     item.optLong("start_ms") + offsetMs,
                     item.optLong("end_ms") + offsetMs,
                 )
-                asr += asrSegment
-                Log.i(TAG, "ASR chunk=$index start=${asrSegment.startMs} end=${asrSegment.endMs} text=${asrSegment.text}")
             }
             onProgress(0.10f + 0.65f * (index + 1).toFloat() / inferenceChunks.size, "Распознавание речи")
         }
@@ -78,12 +76,8 @@ class WhisperTranscriptionOrchestrator(
                 for (index in 0 until segments.length()) {
                     val item = segments.getJSONObject(index)
                     add(com.prostovoice.domain.SpeakerSegment(
-                        speaker = item.optString("speaker"),
-                        startMs = item.optLong("start_ms"),
-                        endMs = item.optLong("end_ms"),
-                        confidence = item.optDouble("confidence", 1.0).toFloat(),
+                        item.optString("speaker"), item.optLong("start_ms"), item.optLong("end_ms"),
                     ))
-                    Log.i(TAG, "Speaker segment=${item.optString("speaker")} start=${item.optLong("start_ms")} end=${item.optLong("end_ms")}")
                 }
             }
         }.getOrElse { error ->

@@ -108,22 +108,4 @@ class TranscriptAlignerTest {
 
         assertEquals("B", result.single().speaker)
     }
-
-    @Test
-    fun lowConfidenceRepeatedTurnSwitchesToAlternativeSpeaker() {
-        val result = TranscriptAligner.align(
-            asrSegments = listOf(
-                AsrSegment("first", 0, 1_000),
-                AsrSegment("last", 1_500, 2_500),
-            ),
-            speakerSegments = listOf(
-                SpeakerSegment("A", 0, 1_000, confidence = 0.9f),
-                SpeakerSegment("A", 1_500, 2_500, confidence = 0.2f),
-                SpeakerSegment("B", 3_000, 4_000, confidence = 0.8f),
-            ),
-            durationMs = 4_000,
-        )
-
-        assertEquals(listOf("A", "B"), result.map { it.speaker })
-    }
 }

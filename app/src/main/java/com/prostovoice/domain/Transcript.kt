@@ -7,7 +7,6 @@ data class TranscriptSegment(
     val text: String,
     val startMs: Long,
     val endMs: Long,
-    val speakerConfidence: Float = 1f,
 )
 
 data class Transcript(
@@ -27,7 +26,6 @@ data class SpeakerSegment(
     val speaker: String,
     val startMs: Long,
     val endMs: Long,
-    val confidence: Float = 1f,
 )
 
 object TranscriptAligner {
@@ -72,19 +70,12 @@ object TranscriptAligner {
                     end = pieceEnd,
                     preferTail = asrSegments.size > 1 && index == asrSegments.lastIndex && pieceIndex == intervals.lastIndex - 2,
                 )
-                TranscriptSegment(
-                    speaker = speaker,
-                    text = text,
-                    startMs = pieceStart,
-                    endMs = pieceEnd,
-                    speakerConfidence = speakerConfidence(speakers, pieceStart, pieceEnd, speaker),
-                )
+                TranscriptSegment(speaker, text, pieceStart, pieceEnd)
             }
         }
 
         val smoothed = smoothShortSwitches(aligned, shortSwitchThresholdMs.coerceAtLeast(0L))
-        val repaired = repairLowConfidenceTurns(smoothed, speakers)
-        return mergeAdjacent(repaired)
+        return mergeAdjacent(smoothed)
     }
 
     private fun overlap(startA: Long, endA: Long, startB: Long, endB: Long): Long =
@@ -131,44 +122,6 @@ object TranscriptAligner {
                 .thenByDescending { it.first.endMs })
             ?.first?.speaker
         return tail ?: majority
-    }
-
-    private fun speakerConfidence(
-        speakers: List<SpeakerSegment>,
-        start: Long,
-        end: Long,
-        speaker: String,
-    ): Float = speakers.asSequence()
-        .filter { it.speaker == speaker && overlap(start, end, it.startMs, it.endMs) > 0L }
-        .map { it.confidence }
-        .maxOrNull() ?: 0f
-
-    private fun repairLowConfidenceTurns(
-        segments: List<TranscriptSegment>,
-        speakers: List<SpeakerSegment>,
-    ): List<TranscriptSegment> {
-        if (segments.size < 2) return segments
-        val knownSpeakers = speakers.map { it.speaker }.distinct()
-        if (knownSpeakers.size < 2) return segments
-        val result = segments.toMutableList()
-        for (index in 1 until result.size) {
-            val previous = result[index - 1]
-            val current = result[index]
-            if (current.speaker == previous.speaker &&
-                current.speakerConfidence < 0.35f &&
-                current.endMs - current.startMs <= 5_000L &&
-                current.startMs - previous.endMs >= 300L
-            ) {
-                val alternative = knownSpeakers.firstOrNull { it != previous.speaker }
-                if (alternative != null) {
-                    result[index] = current.copy(
-                        speaker = alternative,
-                        speakerConfidence = 0.35f,
-                    )
-                }
-            }
-        }
-        return result
     }
 
     private fun splitText(text: String, pieces: Int): List<String> {
