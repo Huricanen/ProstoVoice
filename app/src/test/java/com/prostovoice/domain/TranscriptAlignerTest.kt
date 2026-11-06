@@ -60,4 +60,21 @@ class TranscriptAlignerTest {
         assertEquals("UNKNOWN", result.single().speaker)
         assertTrue(result.single().startMs >= 0L)
     }
+
+    @Test
+    fun finalShortUtteranceUsesSpeakerAtItsTail() {
+        val result = TranscriptAligner.align(
+            asrSegments = listOf(
+                AsrSegment("long turn", 0, 2_000),
+                AsrSegment("short final turn", 2_000, 3_000),
+            ),
+            speakerSegments = listOf(
+                SpeakerSegment("A", 0, 2_650),
+                SpeakerSegment("B", 2_650, 3_000),
+            ),
+            durationMs = 3_000,
+        )
+
+        assertEquals("B", result.last().speaker)
+    }
 }

@@ -44,16 +44,16 @@ object TranscriptAligner {
             }
         }
 
-        val aligned = asrSegments.mapNotNull { segment ->
+        val aligned = asrSegments.mapIndexedNotNull { index, segment ->
             val start = segment.startMs.coerceIn(0L, duration)
             val end = segment.endMs.coerceIn(0L, duration)
-            if (end <= start || segment.text.isBlank()) return@mapNotNull null
-            val speaker = speakers
-                .map { it to overlap(start, end, it.startMs, it.endMs) }
-                .filter { it.second > 0L }
-                .maxWithOrNull(compareBy<Pair<SpeakerSegment, Long>> { it.second }.thenByDescending { it.first.startMs })
-                ?.first?.speaker
-                ?: "UNKNOWN"
+            if (end <= start || segment.text.isBlank()) return@mapIndexedNotNull null
+            val speaker = selectSpeaker(
+                speakers = speakers,
+                start = start,
+                end = end,
+                preferTail = asrSegments.size > 1 && index == asrSegments.lastIndex,
+            )
             TranscriptSegment(speaker, segment.text.trim(), start, end)
         }
 
@@ -63,6 +63,34 @@ object TranscriptAligner {
 
     private fun overlap(startA: Long, endA: Long, startB: Long, endB: Long): Long =
         (minOf(endA, endB) - maxOf(startA, startB)).coerceAtLeast(0L)
+
+    private fun selectSpeaker(
+        speakers: List<SpeakerSegment>,
+        start: Long,
+        end: Long,
+        preferTail: Boolean,
+    ): String {
+        val overlaps = speakers
+            .map { it to overlap(start, end, it.startMs, it.endMs) }
+            .filter { it.second > 0L }
+        if (overlaps.isEmpty()) return "UNKNOWN"
+        val majority = overlaps
+            .maxWithOrNull(compareBy<Pair<SpeakerSegment, Long>> { it.second }
+                .thenByDescending { it.first.startMs })!!.first.speaker
+        if (!preferTail || end - start > 2_500L) return majority
+
+        // Whisper may stretch a short final segment into the preceding turn.
+        // Prefer the speaker covering its trailing 500 ms when that evidence is
+        // present, so a short last utterance is not assigned to the prior turn.
+        val tailStart = maxOf(start, end - 500L)
+        val tail = speakers
+            .map { it to overlap(tailStart, end, it.startMs, it.endMs) }
+            .filter { it.second >= 150L }
+            .maxWithOrNull(compareBy<Pair<SpeakerSegment, Long>> { it.second }
+                .thenByDescending { it.first.endMs })
+            ?.first?.speaker
+        return tail ?: majority
+    }
 
     private fun smoothShortSwitches(
         segments: List<TranscriptSegment>,
