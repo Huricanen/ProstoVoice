@@ -1,10 +1,11 @@
 package com.prostovoice.ui
 
 import android.net.Uri
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.prostovoice.domain.Transcript
-import com.prostovoice.orchestration.PlaceholderTranscriptionOrchestrator
+import com.prostovoice.orchestration.WhisperTranscriptionOrchestrator
 import com.prostovoice.orchestration.TranscriptionOrchestrator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,9 +19,8 @@ data class TranscriptionUiState(
     val errorMessage: String? = null,
 )
 
-class TranscriptionViewModel(
-    private val orchestrator: TranscriptionOrchestrator = PlaceholderTranscriptionOrchestrator(),
-) : ViewModel() {
+class TranscriptionViewModel(application: Application) : AndroidViewModel(application) {
+    private val orchestrator: TranscriptionOrchestrator = WhisperTranscriptionOrchestrator(application)
     private val mutableState = MutableStateFlow(TranscriptionUiState())
     val state: StateFlow<TranscriptionUiState> = mutableState.asStateFlow()
 

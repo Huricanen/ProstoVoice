@@ -1,0 +1,55 @@
+package com.prostovoice.orchestration
+
+import android.content.Context
+import android.net.Uri
+import com.prostovoice.audio.MediaCodecAudioDecoder
+import com.prostovoice.audio.PcmAudioChunk
+import com.prostovoice.domain.AsrSegment
+import com.prostovoice.domain.Transcript
+import com.prostovoice.domain.TranscriptAligner
+import com.prostovoice.nativebridge.NativePipeline
+import kotlinx.coroutines.flow.collect
+import org.json.JSONObject
+
+/** Local Whisper-only pipeline. Diarization is intentionally a later stage. */
+class WhisperTranscriptionOrchestrator(
+    private val context: Context,
+    private val modelFileName: String = DEFAULT_MODEL_FILE,
+) : TranscriptionOrchestrator {
+    override suspend fun transcribe(uri: Uri): Transcript {
+        check(NativePipeline.isAvailable) { "Native Whisper backend недоступен" }
+        val model = context.filesDir.resolve("models/$modelFileName")
+        check(model.isFile) {
+            "Модель не найдена: ${model.absolutePath}. Скопируйте GGML-модель в app files/models."
+        }
+        val chunks = mutableListOf<PcmAudioChunk>()
+        MediaCodecAudioDecoder().decode(context.contentResolver, uri).collect { chunks += it }
+        val samples = FloatArray(chunks.sumOf { it.samples.size })
+        var offset = 0
+        chunks.forEach { chunk ->
+            chunk.samples.copyInto(samples, offset)
+            offset += chunk.samples.size
+        }
+        val response = JSONObject(NativePipeline.transcribePcm(samples, 16_000, model.absolutePath))
+        check(response.optString("status") == "ok") {
+            "Whisper завершился с ошибкой: ${response.optString("status", "unknown")}"
+        }
+        val asr = buildList {
+            val segments = response.optJSONArray("segments") ?: return@buildList
+            for (index in 0 until segments.length()) {
+                val item = segments.getJSONObject(index)
+                add(AsrSegment(item.optString("text"), item.optLong("start_ms"), item.optLong("end_ms")))
+            }
+        }
+        val durationMs = samples.size * 1_000L / 16_000L
+        return Transcript(
+            sourceName = uri.lastPathSegment ?: "audio",
+            durationMs = durationMs,
+            segments = TranscriptAligner.align(asr, emptyList(), durationMs),
+        )
+    }
+
+    companion object {
+        const val DEFAULT_MODEL_FILE = "ggml-large-v3-q5_0.bin"
+    }
+}

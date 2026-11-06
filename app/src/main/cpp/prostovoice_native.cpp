@@ -30,8 +30,8 @@ Java_com_prostovoice_nativebridge_NativePipeline_nativeBackendStatus(
         JNIEnv* env,
         jobject /* self */) {
     return ToString(env,
-                    "{\"status\":\"stub\",\"offline\":true,"
-                    "\"whisper\":\"not_configured\","
+                    "{\"status\":\"ready\",\"offline\":true,"
+                    "\"whisper\":\"whisper.cpp\","
                     "\"diarization\":\"not_configured\"}");
 }
 

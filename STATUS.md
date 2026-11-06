@@ -22,8 +22,9 @@
 - [x] 2026-11-06: после подключения codec decoder, native boundary и JSON schema повторно выполнены `gradlew.bat test assembleDebug`; BUILD SUCCESSFUL, 69 задач, APK 11 528 022 байта.
 - [x] PCM 16-bit WAV decoder, mono downmix и 16 kHz resampling добавлены; unit tests проходят.
 - [x] Offline WorkManager request/worker с progress и fallback marker добавлен; unit tests проходят.
-- [ ] Whisper.cpp и sherpa-onnx.
-- [ ] Модели и лицензии на их распространение.
+- [x] 2026-11-06: Whisper.cpp source integrated as tracked third-party dependency; arm64 CMake build succeeds with `GGML_NATIVE=OFF`.
+- [x] 2026-11-06: local Whisper Large-v3 Q5 model downloaded and hash-checked; APK does not package it yet.
+- [ ] sherpa-onnx diarization runtime, compatible ONNX models and licenses.
 - [x] 2026-11-06: native boundary усилена валидацией входов и offline status JSON; реальный runtime ещё не подключён.
 - [x] 2026-11-06: MP3/M4A/AAC decoder добавлен через MediaExtractor/MediaCodec; device codec validation ещё не выполнена.
 - [x] 2026-11-06: JSON export приведён к корневому `transcript` контракту из ТЗ; unit tests проходят.
@@ -32,11 +33,10 @@
 - [x] 2026-11-06: APK установлен на AVD `Medium_Phone_API_37.0` через ADB и приложение запущено; `com.prostovoice` имеет активный процесс и resumed `MainActivity`. Сделан снимок стартового экрана для визуальной smoke-проверки.
 - [x] 2026-11-06: APK установлен на физический Poco X7 (`2412DPC0AG`, Android 16) через ADB; приложение запущено, `MainActivity` подтверждена как resumed.
 - [x] 2026-11-06: презентация хакатона и присланные изображения приняты как рабочее ТЗ базового уровня.
-- [ ] Проверка native ABI: NDK и CMake не найдены.
-- [ ] Native toolchain: NDK и CMake не найдены.
+- [x] 2026-11-06: arm64-v8a native library builds with installed NDK 27.2.12479018 and CMake 3.22.1.
 - [ ] Проверка MediaExtractor/MediaCodec на реальных MP3/M4A/AAC файлах на Android.
-- [ ] Подключить WorkManager к реальному orchestrator вместо placeholder.
-- [ ] Подключить реальные Whisper.cpp/sherpa-onnx runtime и модели; текущая ошибка backend ожидаема до этого этапа.
+- [x] 2026-11-06: UI orchestrator now decodes local audio and calls Whisper.cpp when the model is provisioned in app files.
+- [ ] Connect WorkManager to the real orchestrator and provision the model through a reproducible APK/install flow.
 - [ ] Выполнить WER/RTF на трёх предоставленных экспертами записях.
 - [ ] Instrumented/Compose tests на эмуляторе или телефоне.
 

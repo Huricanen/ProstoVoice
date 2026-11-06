@@ -12,11 +12,11 @@ ProstoVoice — планируемое Android-приложение для ло�
 - Создан минимальный Gradle Kotlin DSL-каркас с модулем `app`.
 - `MainActivity` использует Compose и SAF `OpenDocument` для выбора `audio/*`.
 - `app/src/main/java/com/prostovoice/domain/Transcript.kt` содержит модели transcript и сегмента.
-- `app/src/main/java/com/prostovoice/orchestration/TranscriptionOrchestrator.kt` задаёт границу будущего native pipeline и placeholder.
+- `app/src/main/java/com/prostovoice/orchestration/TranscriptionOrchestrator.kt` задаёт orchestration boundary; `WhisperTranscriptionOrchestrator.kt` декодирует URI и вызывает native Whisper.
 - `TranscriptionViewModel` связывает SAF-выбор файла с orchestration state, progress и error state.
 - `app/src/main/java/com/prostovoice/export/TranscriptExport.kt` содержит TXT serialization и JSON export с корневым `transcript`.
 - `WavPcmAudioDecoder` поддерживает потоковое чтение PCM 16-bit WAV mono/stereo, downmix и resampling в 16 kHz mono.
-- `TranscriptionWorker` и `TranscriptionWorkRequest` задают offline WorkManager boundary для длительной обработки при свёрнутом приложении.
+- `TranscriptionWorker` и `TranscriptionWorkRequest` задают offline WorkManager boundary для длительной обработки при свёрнутом приложении; worker пока требует отдельного подключения real orchestrator.
 - `tools/evaluate_transcript.py` сравнивает два hackathon JSON и вычисляет WER/RTF.
 
 ## Архитектура базового уровня
@@ -46,4 +46,4 @@ ProstoVoice — планируемое Android-приложение для ло�
 
 ## Ограничения
 
-Репозиторий пока не содержит реальных Whisper/sherpa-onnx моделей. MP3/M4A путь реализован через Android codecs, но требует device validation. WorkManager пока вызывает placeholder orchestrator, который намеренно сообщает об отсутствии backend. Native build требует NDK и CMake; Java/Android build подтверждён на JDK 17.
+Whisper.cpp source уже встроен в native build, а локальная GGML Whisper Large-v3 Q5 модель хранится вне Git в `models/whisper`. Приложение ожидает её в `files/models` и пока не пакует автоматически. sherpa-onnx runtime/models ещё не подключены. MP3/M4A путь реализован через Android codecs, но требует device validation. Native build подтверждён для arm64-v8a на NDK/CMake; Java/Android build — на JDK 17.
