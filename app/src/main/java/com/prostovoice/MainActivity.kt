@@ -42,6 +42,7 @@ private fun ProstoVoiceApp() {
     val viewModel: TranscriptionViewModel = viewModel()
     val state by viewModel.state.collectAsState()
     var pendingExport by remember { mutableStateOf<String?>(null) }
+    var deviceProfile by remember { mutableStateOf<String?>(null) }
     val context = androidx.compose.ui.platform.LocalContext.current
     val picker = rememberLauncherForActivityResult(OpenDocument()) { uri ->
         uri?.let(viewModel::selectFile)
@@ -67,6 +68,11 @@ private fun ProstoVoiceApp() {
             ) {
                 Text("ProstoVoice", style = MaterialTheme.typography.headlineMedium)
                 Text("Локальная расшифровка аудиозаписей")
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { deviceProfile = com.prostovoice.nativebridge.NativePipeline.deviceProfile() },
+                ) { Text("Диагностика устройства") }
+                deviceProfile?.let { Text("Профиль: $it") }
                 Button(
                     modifier = Modifier.fillMaxWidth(),
                     onClick = { picker.launch(arrayOf("audio/*")) },

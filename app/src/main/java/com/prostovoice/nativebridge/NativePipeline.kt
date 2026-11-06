@@ -24,6 +24,8 @@ object NativePipeline {
     fun backendStatus(): String = if (loaded) nativeBackendStatus() else
         "{\"status\":\"native_unavailable\",\"offline\":true}"
 
+    fun deviceProfile(): String = backendStatus()
+
     fun transcribePcm(
         pcm: FloatArray,
         sampleRate: Int,

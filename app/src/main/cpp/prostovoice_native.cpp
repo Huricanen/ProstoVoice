@@ -1,5 +1,7 @@
 #include <jni.h>
 #include <android/log.h>
+#include <algorithm>
+#include <thread>
 #include <string>
 #include <whisper.h>
 
@@ -30,10 +32,9 @@ extern "C" JNIEXPORT jstring JNICALL
 Java_com_prostovoice_nativebridge_NativePipeline_nativeBackendStatus(
         JNIEnv* env,
         jobject /* self */) {
-    return ToString(env,
-                    "{\"status\":\"ready\",\"offline\":true,"
-                    "\"whisper\":\"whisper.cpp\","
-                    "\"diarization\":\"not_configured\"}");
+    const unsigned int cores = std::thread::hardware_concurrency();
+    const unsigned int selected = cores > 2 ? std::min(6u, cores - 1u) : 2u;
+    return ToString(env, "{\"status\":\"ready\",\"offline\":true,\"whisper\":\"whisper.cpp\",\"diarization\":\"not_configured\",\"cpu_cores\":" + std::to_string(cores) + ",\"whisper_threads\":" + std::to_string(selected) + "}");
 }
 
 extern "C" JNIEXPORT jstring JNICALL
@@ -66,7 +67,9 @@ Java_com_prostovoice_nativebridge_NativePipeline_nativeTranscribePcm(
     params.print_timestamps = false;
     params.no_context = true;
     params.language = "auto";
-    params.n_threads = 4;
+    const unsigned int cores = std::thread::hardware_concurrency();
+    params.n_threads = static_cast<int>(cores > 2 ? std::min(6u, cores - 1u) : 2u);
+    __android_log_print(ANDROID_LOG_INFO, "ProstoVoiceWhisper", "Using %d threads", params.n_threads);
     const int result = whisper_full(context, params, samples, static_cast<int>(sample_count));
     __android_log_print(ANDROID_LOG_INFO, "ProstoVoiceWhisper", "whisper_full returned %d", result);
     env->ReleaseFloatArrayElements(pcm, samples, JNI_ABORT);
