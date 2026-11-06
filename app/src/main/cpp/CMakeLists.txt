@@ -32,7 +32,9 @@ add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../../../../third_party/sherpa-onnx s
 add_library(prostovoice_native SHARED prostovoice_native.cpp)
 
 target_compile_features(prostovoice_native PRIVATE cxx_std_17)
-target_include_directories(prostovoice_native PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../../../../third_party/whisper.cpp/include)
+target_include_directories(prostovoice_native PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR}/../../../../third_party/whisper.cpp/include
+    ${CMAKE_CURRENT_LIST_DIR}/../../../../third_party/sherpa-onnx/sherpa-onnx/c-api)
 
 find_library(log-lib log)
 target_link_libraries(prostovoice_native PRIVATE whisper sherpa-onnx-c-api ${log-lib})

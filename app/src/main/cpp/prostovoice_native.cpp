@@ -5,6 +5,7 @@
 #include <string>
 #include <mutex>
 #include <whisper.h>
+#include <c-api.h>
 
 namespace {
 
@@ -113,6 +114,50 @@ Java_com_prostovoice_nativebridge_NativePipeline_nativeDiarizePcm(
     if (sample_rate <= 0 || segmentation_model_path == nullptr || embedding_model_path == nullptr) {
         return ToString(env, "{\"status\":\"invalid_config\",\"engine\":\"sherpa-onnx\"}");
     }
-    // Model compatibility and runtime wiring are handled in the diarization stage.
-    return ToString(env, "{\"status\":\"not_configured\",\"engine\":\"sherpa-onnx\",\"offline\":true}");
+    const jsize sample_count = env->GetArrayLength(pcm);
+    jfloat* samples = env->GetFloatArrayElements(pcm, nullptr);
+    const char* segmentation_model = env->GetStringUTFChars(segmentation_model_path, nullptr);
+    const char* embedding_model = env->GetStringUTFChars(embedding_model_path, nullptr);
+    SherpaOnnxOfflineSpeakerDiarizationConfig config{};
+    config.segmentation.pyannote.model = segmentation_model;
+    config.segmentation.pyannote.window_shift_ratio = 0.1f;
+    config.segmentation.num_threads = 2;
+    config.segmentation.provider = "cpu";
+    config.embedding.model = embedding_model;
+    config.embedding.num_threads = 2;
+    config.embedding.provider = "cpu";
+    config.clustering.num_clusters = 0;
+    config.clustering.threshold = 0.35f;
+    config.clustering.compute_confidence = 1;
+    config.min_duration_on = 0.3f;
+    config.min_duration_off = 0.1f;
+    const SherpaOnnxOfflineSpeakerDiarization* diarizer =
+        SherpaOnnxCreateOfflineSpeakerDiarization(&config);
+    env->ReleaseStringUTFChars(segmentation_model_path, segmentation_model);
+    env->ReleaseStringUTFChars(embedding_model_path, embedding_model);
+    if (diarizer == nullptr) {
+        env->ReleaseFloatArrayElements(pcm, samples, JNI_ABORT);
+        return ToString(env, "{\"status\":\"model_load_failed\",\"engine\":\"sherpa-onnx\"}");
+    }
+    const SherpaOnnxOfflineSpeakerDiarizationResult* result =
+        SherpaOnnxOfflineSpeakerDiarizationProcess(diarizer, samples, sample_count);
+    env->ReleaseFloatArrayElements(pcm, samples, JNI_ABORT);
+    if (result == nullptr) {
+        SherpaOnnxDestroyOfflineSpeakerDiarization(diarizer);
+        return ToString(env, "{\"status\":\"inference_failed\",\"engine\":\"sherpa-onnx\"}");
+    }
+    const int count = SherpaOnnxOfflineSpeakerDiarizationResultGetNumSegments(result);
+    const auto* segments = SherpaOnnxOfflineSpeakerDiarizationResultSortByStartTime(result);
+    std::string json = "{\"status\":\"ok\",\"engine\":\"sherpa-onnx\",\"segments\":[";
+    for (int i = 0; i < count; ++i) {
+        if (i > 0) json += ',';
+        json += "{\"start_ms\":" + std::to_string(static_cast<int>(segments[i].start * 1000)) +
+                ",\"end_ms\":" + std::to_string(static_cast<int>(segments[i].end * 1000)) +
+                ",\"speaker\":\"speaker_" + std::to_string(segments[i].speaker + 1) + "\"}";
+    }
+    json += "]}";
+    SherpaOnnxOfflineSpeakerDiarizationDestroySegment(segments);
+    SherpaOnnxOfflineSpeakerDiarizationDestroyResult(result);
+    SherpaOnnxDestroyOfflineSpeakerDiarization(diarizer);
+    return ToString(env, json);
 }
