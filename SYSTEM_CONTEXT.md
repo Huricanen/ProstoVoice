@@ -45,4 +45,4 @@ ProstoVoice — планируемое Android-приложение для ло�
 
 ## Ограничения
 
-Репозиторий пока не содержит реальных Whisper/sherpa-onnx моделей. MP3/M4A путь реализован через Android codecs, но требует device validation. WorkManager пока вызывает placeholder orchestrator. Native build требует NDK и CMake; Java/Android build подтверждён на JDK 17.
+Репозиторий пока не содержит реальных Whisper/sherpa-onnx моделей. MP3/M4A путь реализован через Android codecs, но требует device validation. WorkManager пока вызывает placeholder orchestrator, который намеренно сообщает об отсутствии backend. Native build требует NDK и CMake; Java/Android build подтверждён на JDK 17.

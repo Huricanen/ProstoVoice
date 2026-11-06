@@ -26,6 +26,7 @@
 - [x] 2026-11-06: native boundary усилена валидацией входов и offline status JSON; реальный runtime ещё не подключён.
 - [x] 2026-11-06: MP3/M4A/AAC decoder добавлен через MediaExtractor/MediaCodec; device codec validation ещё не выполнена.
 - [x] 2026-11-06: JSON export приведён к корневому `transcript` контракту из ТЗ; unit tests проходят.
+- [x] 2026-11-06: placeholder orchestration теперь возвращает явную ошибку отсутствующего local backend и не создаёт ложный успешный transcript.
 - [x] 2026-11-06: APK установлен на AVD `Medium_Phone_API_37.0` через ADB и приложение запущено; `com.prostovoice` имеет активный процесс и resumed `MainActivity`. Сделан снимок стартового экрана для визуальной smoke-проверки.
 - [x] 2026-11-06: APK установлен на физический Poco X7 (`2412DPC0AG`, Android 16) через ADB; приложение запущено, `MainActivity` подтверждена как resumed.
 - [x] 2026-11-06: презентация хакатона и присланные изображения приняты как рабочее ТЗ базового уровня.
@@ -33,6 +34,7 @@
 - [ ] Native toolchain: NDK и CMake не найдены.
 - [ ] Проверка MediaExtractor/MediaCodec на реальных MP3/M4A/AAC файлах на Android.
 - [ ] Подключить WorkManager к реальному orchestrator вместо placeholder.
+- [ ] Подключить реальные Whisper.cpp/sherpa-onnx runtime и модели; текущая ошибка backend ожидаема до этого этапа.
 - [ ] Instrumented/Compose tests на эмуляторе или телефоне.
 
 ## Зафиксированные входы от команды и ТЗ
