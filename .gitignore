@@ -26,6 +26,9 @@ replay_pid*
 # Kotlin Gradle plugin data, see https://kotlinlang.org/docs/whatsnew20.html#new-directory-for-kotlin-data-in-gradle-projects
 .kotlin/
 
+# The Gradle wrapper is a tracked build tool, even though other JARs are ignored.
+!gradle/wrapper/gradle-wrapper.jar
+
 # Android Studio / IntelliJ
 .idea/
 *.iml
