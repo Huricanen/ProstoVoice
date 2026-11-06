@@ -27,6 +27,13 @@ an uncompressed APK asset, and extracts it to app-private storage on first use.
 - SHA-256: `465D0975BF70FBF14FB77C0589A5D346A9C07C2170345F529CF774678446DB76`
 - Status: downloaded on 2026-11-06 for compatibility inspection; not wired into runtime yet.
 
+- Speaker embedding: `models/diarization/eres2net-base-3dspeaker-16k.onnx`
+- Source: `https://huggingface.co/onemira/eres2net-base-3dspeaker-onnx`
+- Size: 39,593,761 bytes
+- SHA-256: `1A331345F04805BADBB495C775A6DDFFCDD1A732567D5EC8B3D5749E3C7A5E4B`
+- License/provenance: Apache-2.0, sherpa-onnx distribution; LICENSE and NOTICE are retained by the source repository.
+- Status: downloaded for integration; runtime signature still requires validation.
+
 Speaker embedding model and sherpa-onnx runtime are still pending. Do not treat this
 segmentation export as a complete diarization pipeline until its ONNX signature,
 embedding model, clustering and licenses are verified together.
