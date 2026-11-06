@@ -10,7 +10,9 @@ import com.prostovoice.orchestration.TranscriptionOrchestrator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 data class TranscriptionUiState(
     val selectedUri: Uri? = null,
@@ -33,7 +35,9 @@ class TranscriptionViewModel(application: Application) : AndroidViewModel(applic
         if (state.value.isProcessing) return
         viewModelScope.launch {
             mutableState.value = state.value.copy(isProcessing = true, errorMessage = null)
-            runCatching { orchestrator.transcribe(uri) }
+            runCatching {
+                withContext(Dispatchers.Default) { orchestrator.transcribe(uri) }
+            }
                 .onSuccess { transcript ->
                     mutableState.value = state.value.copy(
                         isProcessing = false,
