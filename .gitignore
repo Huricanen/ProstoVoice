@@ -25,3 +25,32 @@ replay_pid*
 
 # Kotlin Gradle plugin data, see https://kotlinlang.org/docs/whatsnew20.html#new-directory-for-kotlin-data-in-gradle-projects
 .kotlin/
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Gradle and local machine configuration
+.gradle/
+local.properties
+build/
+captures/
+
+# Android module build outputs
+*/build/
+*/.cxx/
+*/externalNativeBuild/
+
+# Native/CMake intermediates
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+compile_commands.json
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
