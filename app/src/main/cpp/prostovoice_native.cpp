@@ -4,12 +4,14 @@
 #include <thread>
 #include <string>
 #include <mutex>
+#include <exception>
 #include <whisper.h>
 #include <c-api.h>
 
 namespace {
 
 std::mutex g_whisper_mutex;
+std::mutex g_diarization_mutex;
 whisper_context* g_whisper_context = nullptr;
 std::string g_whisper_model_path;
 
@@ -115,6 +117,13 @@ Java_com_prostovoice_nativebridge_NativePipeline_nativeDiarizePcm(
         return ToString(env, "{\"status\":\"invalid_config\",\"engine\":\"sherpa-onnx\"}");
     }
     const jsize sample_count = env->GetArrayLength(pcm);
+    if (sample_count <= 0 || sample_rate != 16000) {
+        __android_log_print(ANDROID_LOG_ERROR, "ProstoVoiceDiarization",
+                            "Invalid audio input: samples=%d sample_rate=%d",
+                            sample_count, sample_rate);
+        return ToString(env, "{\"status\":\"invalid_input\",\"engine\":\"sherpa-onnx\"}");
+    }
+    std::lock_guard<std::mutex> diarization_lock(g_diarization_mutex);
     jfloat* samples = env->GetFloatArrayElements(pcm, nullptr);
     const char* segmentation_model = env->GetStringUTFChars(segmentation_model_path, nullptr);
     const char* embedding_model = env->GetStringUTFChars(embedding_model_path, nullptr);
@@ -131,22 +140,52 @@ Java_com_prostovoice_nativebridge_NativePipeline_nativeDiarizePcm(
     config.clustering.compute_confidence = 1;
     config.min_duration_on = 0.3f;
     config.min_duration_off = 0.1f;
-    const SherpaOnnxOfflineSpeakerDiarization* diarizer =
-        SherpaOnnxCreateOfflineSpeakerDiarization(&config);
+    __android_log_print(ANDROID_LOG_INFO, "ProstoVoiceDiarization",
+                        "Creating diarizer: samples=%d duration_ms=%d segmentation=%s embedding=%s",
+                        sample_count, static_cast<int>(sample_count * 1000LL / sample_rate),
+                        segmentation_model, embedding_model);
+    const SherpaOnnxOfflineSpeakerDiarization* diarizer = nullptr;
+    try {
+        diarizer = SherpaOnnxCreateOfflineSpeakerDiarization(&config);
+    } catch (const std::exception& error) {
+        __android_log_print(ANDROID_LOG_ERROR, "ProstoVoiceDiarization",
+                            "Diarizer creation exception: %s", error.what());
+    } catch (...) {
+        __android_log_print(ANDROID_LOG_ERROR, "ProstoVoiceDiarization",
+                            "Diarizer creation unknown exception");
+    }
     env->ReleaseStringUTFChars(segmentation_model_path, segmentation_model);
     env->ReleaseStringUTFChars(embedding_model_path, embedding_model);
     if (diarizer == nullptr) {
+        __android_log_print(ANDROID_LOG_ERROR, "ProstoVoiceDiarization",
+                            "Diarizer creation failed");
         env->ReleaseFloatArrayElements(pcm, samples, JNI_ABORT);
         return ToString(env, "{\"status\":\"model_load_failed\",\"engine\":\"sherpa-onnx\"}");
     }
-    const SherpaOnnxOfflineSpeakerDiarizationResult* result =
-        SherpaOnnxOfflineSpeakerDiarizationProcess(diarizer, samples, sample_count);
+    __android_log_print(ANDROID_LOG_INFO, "ProstoVoiceDiarization",
+                        "Starting diarization inference");
+    const SherpaOnnxOfflineSpeakerDiarizationResult* result = nullptr;
+    try {
+        result = SherpaOnnxOfflineSpeakerDiarizationProcess(diarizer, samples, sample_count);
+    } catch (const std::exception& error) {
+        __android_log_print(ANDROID_LOG_ERROR, "ProstoVoiceDiarization",
+                            "Diarization inference exception: %s", error.what());
+    } catch (...) {
+        __android_log_print(ANDROID_LOG_ERROR, "ProstoVoiceDiarization",
+                            "Diarization inference unknown exception");
+    }
     env->ReleaseFloatArrayElements(pcm, samples, JNI_ABORT);
     if (result == nullptr) {
+        __android_log_print(ANDROID_LOG_ERROR, "ProstoVoiceDiarization",
+                            "Diarization inference returned null");
         SherpaOnnxDestroyOfflineSpeakerDiarization(diarizer);
         return ToString(env, "{\"status\":\"inference_failed\",\"engine\":\"sherpa-onnx\"}");
     }
     const int count = SherpaOnnxOfflineSpeakerDiarizationResultGetNumSegments(result);
+    const int speakers = SherpaOnnxOfflineSpeakerDiarizationResultGetNumSpeakers(result);
+    __android_log_print(ANDROID_LOG_INFO, "ProstoVoiceDiarization",
+                        "Diarization returned %d speakers and %d segments",
+                        speakers, count);
     const auto* segments = SherpaOnnxOfflineSpeakerDiarizationResultSortByStartTime(result);
     std::string json = "{\"status\":\"ok\",\"engine\":\"sherpa-onnx\",\"segments\":[";
     for (int i = 0; i < count; ++i) {
@@ -159,5 +198,7 @@ Java_com_prostovoice_nativebridge_NativePipeline_nativeDiarizePcm(
     SherpaOnnxOfflineSpeakerDiarizationDestroySegment(segments);
     SherpaOnnxOfflineSpeakerDiarizationDestroyResult(result);
     SherpaOnnxDestroyOfflineSpeakerDiarization(diarizer);
+    __android_log_print(ANDROID_LOG_INFO, "ProstoVoiceDiarization",
+                        "Diarization completed successfully");
     return ToString(env, json);
 }

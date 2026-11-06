@@ -21,11 +21,11 @@ an uncompressed APK asset, and extracts it to app-private storage on first use.
 
 ## Diarization
 
-- Candidate segmentation export: `models/diarization/pyannote-segmentation-3.0-int8.onnx`
-- Source: `https://huggingface.co/onnx-community/pyannote-segmentation-3.0`
+- Segmentation export: `models/diarization/pyannote-segmentation-3.0-int8.onnx`
+- Source: `https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-segmentation-models/sherpa-onnx-pyannote-segmentation-3-0.tar.bz2`
 - Size: 1,542,304 bytes
-- SHA-256: `465D0975BF70FBF14FB77C0589A5D346A9C07C2170345F529CF774678446DB76`
-- Status: downloaded on 2026-11-06 for compatibility inspection; not wired into runtime yet.
+- SHA-256: `D582F4B4C6B48205DE7E0643C57DF0DF5615A3C176189BE3FC461E9D18827B5D`
+- Status: sherpa-onnx release export downloaded on 2026-11-06; includes the metadata required by the pyannote loader.
 
 - Speaker embedding: `models/diarization/eres2net-base-3dspeaker-16k.onnx`
 - Source: `https://huggingface.co/onemira/eres2net-base-3dspeaker-onnx`
@@ -34,6 +34,4 @@ an uncompressed APK asset, and extracts it to app-private storage on first use.
 - License/provenance: Apache-2.0, sherpa-onnx distribution; LICENSE and NOTICE are retained by the source repository.
 - Status: downloaded for integration; runtime signature still requires validation.
 
-Speaker embedding model and sherpa-onnx runtime are still pending. Do not treat this
-segmentation export as a complete diarization pipeline until its ONNX signature,
-embedding model, clustering and licenses are verified together.
+The speaker embedding model and runtime remain subject to on-device validation.

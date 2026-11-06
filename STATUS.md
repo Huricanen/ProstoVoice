@@ -26,7 +26,7 @@
 - [x] 2026-11-06: local Whisper Large-v3 Q5 model downloaded and hash-checked; APK does not package it yet.
 - [x] 2026-11-06: Whisper GGML model is packaged as an uncompressed APK asset and extracted atomically on first use; debug APK is 1,099,232,103 bytes.
 - [x] 2026-11-06: phone smoke logs showed correct 8.91 s MP3 decode but full Large-v3 Q5 remained in `whisper_full` after 13 minutes; runtime default switched to Large-v3 Turbo Q5, clean APK size 592,133,109 bytes.
-- [ ] sherpa-onnx diarization runtime, compatible ONNX models and licenses.
+- [x] sherpa-onnx diarization runtime and arm64 native build integrated; diarization model compatibility was validated statically with the required ONNX metadata.
 - [x] 2026-11-06: native boundary усилена валидацией входов и offline status JSON; реальный runtime ещё не подключён.
 - [x] 2026-11-06: MP3/M4A/AAC decoder добавлен через MediaExtractor/MediaCodec; device codec validation ещё не выполнена.
 - [x] 2026-11-06: JSON export приведён к корневому `transcript` контракту из ТЗ; unit tests проходят.
@@ -34,6 +34,7 @@
 - [x] 2026-11-06: добавлен `tools/evaluate_transcript.py` для WER/RTF по hackathon JSON; `py_compile` и CLI help проходят.
 - [x] 2026-11-06: APK установлен на AVD `Medium_Phone_API_37.0` через ADB и приложение запущено; `com.prostovoice` имеет активный процесс и resumed `MainActivity`. Сделан снимок стартового экрана для визуальной smoke-проверки.
 - [x] 2026-11-06: APK установлен на физический Poco X7 (`2412DPC0AG`, Android 16) через ADB; приложение запущено, `MainActivity` подтверждена как resumed.
+- [x] 2026-11-06: после падения при первом запуске diarization заменена несовместимая pyannote segmentation-модель на официальный sherpa-onnx export; добавлены native runtime logs и serialisation вызовов diarization. Новый debug APK собирается (271 646 364 байта, SHA-256 `CDB23EFF1F00E1FEC4AA3196AA32CE8A5AF0CF20A4EA8A46B6C77F4E2BECCF39`), но ещё не установлен на телефон и не проверен воспроизведением.
 - [x] 2026-11-06: свежий debug APK после `assembleDebug` (592 133 109 байт, SHA-256 `C3D5ABF994C3CED000D7F0BBEE6A782F1A23FB18DC3DEEC258A9EA7AF62E51E4`) установлен на Poco X7 и запущен.
 - [x] 2026-11-06: презентация хакатона и присланные изображения приняты как рабочее ТЗ базового уровня.
 - [x] 2026-11-06: arm64-v8a native library builds with installed NDK 27.2.12479018 and CMake 3.22.1.
@@ -42,6 +43,7 @@
 - [ ] Connect WorkManager to the real orchestrator and provision the model through a reproducible APK/install flow.
 - [ ] Выполнить WER/RTF на трёх предоставленных экспертами записях.
 - [ ] Instrumented/Compose tests на эмуляторе или телефоне.
+- [ ] Повторить обработку на Poco X7 с новым APK и собрать logcat по тегу `ProstoVoiceDiarization`; реальный runtime diarization пока не подтверждён.
 
 ## Зафиксированные входы от команды и ТЗ
 

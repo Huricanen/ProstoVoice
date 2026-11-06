@@ -72,6 +72,13 @@
 - **Основание:** Q5-модель совместима с Whisper.cpp и существенно снижает RAM/диск относительно full precision; размер APK пока не ограничен, но воспроизводимая упаковка ещё не выбрана.
 - **Последствия:** debug APK увеличился примерно до 1.1 ГБ, а на первом запуске требуется дополнительное место под распакованную модель; реальная скорость и RAM требуют device benchmark.
 
+### 2026-11-06 — использовать официальный sherpa-onnx pyannote export
+
+- **Контекст:** приложение завершалось при первом запуске diarization без Java stack trace.
+- **Решение:** заменить segmentation ONNX из `onnx-community` на `model.int8.onnx` из релиза sherpa-onnx `speaker-segmentation-models`; добавить native logs и сериализацию diarization вызовов.
+- **Основание:** loader sherpa-onnx требует семь metadata-полей (`sample_rate`, `window_size`, `receptive_field_size`, `receptive_field_shift`, `num_speakers`, `powerset_max_classes`, `num_classes`) и завершает процесс при их отсутствии; официальный export содержит эти поля.
+- **Последствия:** статическая совместимость исправлена, но успешность inference и нагрузка на телефон должны быть подтверждены отдельным device smoke test.
+
 ## Ожидают проверки или уточнения
 
 Минимальный Android API, ABI, формат поставки моделей, модель Whisper Large и квантование, memory budget 4 ГБ устройства, RealTime scope, лицензии моделей, входные форматы и правила WER/RTF требуют проверки или уточнения. Базовая функциональность из презентации уже принята в работу.
