@@ -8,11 +8,12 @@ interface TranscriptionOrchestrator {
     suspend fun transcribe(uri: Uri): Transcript
 }
 
+class TranscriptionUnavailableException(message: String) : IllegalStateException(message)
+
 class PlaceholderTranscriptionOrchestrator : TranscriptionOrchestrator {
-    override suspend fun transcribe(uri: Uri): Transcript = Transcript(
-        sourceName = uri.lastPathSegment ?: "audio",
-        durationMs = 0L,
-        language = null,
-        segments = emptyList(),
-    )
+    override suspend fun transcribe(uri: Uri): Transcript {
+        throw TranscriptionUnavailableException(
+            "Локальный Whisper/diarization backend ещё не подключён; обработка файла невозможна",
+        )
+    }
 }
