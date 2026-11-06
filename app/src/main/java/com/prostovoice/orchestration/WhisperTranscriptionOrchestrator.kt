@@ -5,6 +5,7 @@ import android.net.Uri
 import android.util.Log
 import com.prostovoice.audio.MediaCodecAudioDecoder
 import com.prostovoice.audio.PcmAudioChunk
+import com.prostovoice.audio.AudioChunker
 import com.prostovoice.domain.AsrSegment
 import com.prostovoice.domain.Transcript
 import com.prostovoice.domain.TranscriptAligner
@@ -33,18 +34,27 @@ class WhisperTranscriptionOrchestrator(
         }
         Log.i(TAG, "Decoded ${samples.size} samples (${samples.size / 16_000f}s), starting Whisper")
         val startedAt = System.nanoTime()
-        val response = JSONObject(NativePipeline.transcribePcm(samples, 16_000, model.absolutePath))
-        Log.i(TAG, "Whisper finished in ${(System.nanoTime() - startedAt) / 1_000_000} ms")
-        check(response.optString("status") == "ok") {
-            "Whisper завершился с ошибкой: ${response.optString("status", "unknown")}"
-        }
-        val asr = buildList {
-            val segments = response.optJSONArray("segments") ?: return@buildList
-            for (index in 0 until segments.length()) {
-                val item = segments.getJSONObject(index)
-                add(AsrSegment(item.optString("text"), item.optLong("start_ms"), item.optLong("end_ms")))
+        val asr = mutableListOf<AsrSegment>()
+        val inferenceChunks = AudioChunker.split(samples)
+        inferenceChunks.forEachIndexed { index, chunk ->
+            Log.i(TAG, "Whisper chunk ${index + 1}/${inferenceChunks.size}: ${chunk.samples.size / 16_000f}s")
+            val response = JSONObject(NativePipeline.transcribePcm(chunk.samples, 16_000, model.absolutePath))
+            check(response.optString("status") == "ok") {
+                "Whisper chunk ${index + 1} завершился с ошибкой: ${response.optString("status", "unknown")}"
+            }
+            val offsetMs = chunk.startSample * 1_000L / 16_000L
+            val segments = response.optJSONArray("segments") ?: return@forEachIndexed
+            for (segmentIndex in 0 until segments.length()) {
+                val item = segments.getJSONObject(segmentIndex)
+                asr += AsrSegment(
+                    item.optString("text"),
+                    item.optLong("start_ms") + offsetMs,
+                    item.optLong("end_ms") + offsetMs,
+                )
             }
         }
+        val deduplicatedAsr = AudioChunker.deduplicateAsrSegments(asr)
+        Log.i(TAG, "Whisper finished in ${(System.nanoTime() - startedAt) / 1_000_000} ms across ${inferenceChunks.size} chunks")
         val durationMs = samples.size * 1_000L / 16_000L
         val speakerSegments = runCatching {
             val segmentation = WhisperModelStore(context, SEGMENTATION_MODEL).ensureModel()
@@ -69,7 +79,7 @@ class WhisperTranscriptionOrchestrator(
         return Transcript(
             sourceName = uri.lastPathSegment ?: "audio",
             durationMs = durationMs,
-            segments = TranscriptAligner.align(asr, speakerSegments, durationMs),
+            segments = TranscriptAligner.align(deduplicatedAsr, speakerSegments, durationMs),
         )
     }
 

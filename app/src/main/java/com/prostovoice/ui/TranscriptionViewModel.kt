@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.prostovoice.domain.Transcript
 import com.prostovoice.orchestration.WhisperTranscriptionOrchestrator
 import com.prostovoice.orchestration.TranscriptionOrchestrator
+import com.prostovoice.storage.TranscriptStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,8 +24,15 @@ data class TranscriptionUiState(
 
 class TranscriptionViewModel(application: Application) : AndroidViewModel(application) {
     private val orchestrator: TranscriptionOrchestrator = WhisperTranscriptionOrchestrator(application)
+    private val transcriptStore = TranscriptStore(application)
     private val mutableState = MutableStateFlow(TranscriptionUiState())
     val state: StateFlow<TranscriptionUiState> = mutableState.asStateFlow()
+
+    init {
+        transcriptStore.load()?.let { transcript ->
+            mutableState.value = TranscriptionUiState(transcript = transcript)
+        }
+    }
 
     fun selectFile(uri: Uri) {
         mutableState.value = TranscriptionUiState(selectedUri = uri)
@@ -39,6 +47,7 @@ class TranscriptionViewModel(application: Application) : AndroidViewModel(applic
                 withContext(Dispatchers.Default) { orchestrator.transcribe(uri) }
             }
                 .onSuccess { transcript ->
+                    transcriptStore.save(transcript)
                     mutableState.value = state.value.copy(
                         isProcessing = false,
                         transcript = transcript,
