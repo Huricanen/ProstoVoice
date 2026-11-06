@@ -25,6 +25,7 @@
 - [x] 2026-11-06: Whisper.cpp source integrated as tracked third-party dependency; arm64 CMake build succeeds with `GGML_NATIVE=OFF`.
 - [x] 2026-11-06: local Whisper Large-v3 Q5 model downloaded and hash-checked; APK does not package it yet.
 - [x] 2026-11-06: Whisper GGML model is packaged as an uncompressed APK asset and extracted atomically on first use; debug APK is 1,099,232,103 bytes.
+- [x] 2026-11-06: phone smoke logs showed correct 8.91 s MP3 decode but full Large-v3 Q5 remained in `whisper_full` after 13 minutes; runtime default switched to Large-v3 Turbo Q5, clean APK size 592,133,109 bytes.
 - [ ] sherpa-onnx diarization runtime, compatible ONNX models and licenses.
 - [x] 2026-11-06: native boundary усилена валидацией входов и offline status JSON; реальный runtime ещё не подключён.
 - [x] 2026-11-06: MP3/M4A/AAC decoder добавлен через MediaExtractor/MediaCodec; device codec validation ещё не выполнена.

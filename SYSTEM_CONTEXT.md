@@ -46,4 +46,4 @@ ProstoVoice — планируемое Android-приложение для ло�
 
 ## Ограничения
 
-Whisper.cpp source уже встроен в native build, а локальная GGML Whisper Large-v3 Q5 модель хранится вне Git в `models/whisper`, включается в APK как uncompressed asset и извлекается в `files/models` при первом использовании. sherpa-onnx runtime/models ещё не подключены. MP3/M4A путь реализован через Android codecs, но требует device validation. Native build подтверждён для arm64-v8a на NDK/CMake; Java/Android build — на JDK 17.
+Whisper.cpp source уже встроен в native build. Для телефонного runtime в APK включается GGML Whisper Large-v3 Turbo Q5 из `models/whisper`, а полный Large-v3 Q5 хранится отдельно в `models/optional`; asset извлекается в `files/models` при первом использовании. На подключённом телефоне MP3 8,91 с корректно декодировался, но полный Large-v3 Q5 не завершил `whisper_full` за 13 минут, поэтому Turbo выбран как практический fallback. sherpa-onnx runtime/models ещё не подключены. MP3/M4A путь требует дальнейшей device validation. Native build подтверждён для arm64-v8a на NDK/CMake; Java/Android build — на JDK 17.
