@@ -188,6 +188,14 @@ Java_com_prostovoice_nativebridge_NativePipeline_nativeDiarizePcm(
                         "Diarization returned %d speakers and %d segments",
                         speakers, count);
     const auto* segments = SherpaOnnxOfflineSpeakerDiarizationResultSortByStartTime(result);
+    for (int i = 0; i < count; ++i) {
+        __android_log_print(ANDROID_LOG_INFO, "ProstoVoiceDiarization",
+                            "segment[%d] speaker=%d start_ms=%d end_ms=%d confidence=%.3f",
+                            i, segments[i].speaker + 1,
+                            static_cast<int>(segments[i].start * 1000),
+                            static_cast<int>(segments[i].end * 1000),
+                            segments[i].confidence);
+    }
     std::string json = "{\"status\":\"ok\",\"engine\":\"sherpa-onnx\",\"segments\":[";
     for (int i = 0; i < count; ++i) {
         if (i > 0) json += ',';
