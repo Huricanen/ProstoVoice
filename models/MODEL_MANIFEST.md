@@ -9,9 +9,10 @@ Model files are provisioned outside Git and are ignored by `.gitignore`.
 - Format: Whisper.cpp GGML
 - Size: 1,081,140,203 bytes
 - SHA-256: `D75795ECFF3F83B5FAA89D1900604AD8C780ABD5739FAE406DE19F23ECD98AD1`
-- Status: downloaded and hash-checked on 2026-11-06
+- Status: downloaded and hash-checked on 2026-11-06; included in debug APK assets and extracted on first use.
 
-The APK does not package this file yet. Native integration and a model-path provisioner are required before inference.
+The Gradle build reads this ignored local file from `models/whisper`, packages it as
+an uncompressed APK asset, and extracts it to app-private storage on first use.
 
 ## Diarization
 

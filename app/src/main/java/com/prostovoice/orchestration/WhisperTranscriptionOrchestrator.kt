@@ -18,10 +18,10 @@ class WhisperTranscriptionOrchestrator(
 ) : TranscriptionOrchestrator {
     override suspend fun transcribe(uri: Uri): Transcript {
         check(NativePipeline.isAvailable) { "Native Whisper backend недоступен" }
-        val model = context.filesDir.resolve("models/$modelFileName")
-        check(model.isFile) {
-            "Модель не найдена: ${model.absolutePath}. Скопируйте GGML-модель в app files/models."
-        }
+        val model = runCatching { WhisperModelStore(context, modelFileName).ensureModel() }
+            .getOrElse { error ->
+                throw IllegalStateException("Не удалось подготовить встроенную Whisper-модель", error)
+            }
         val chunks = mutableListOf<PcmAudioChunk>()
         MediaCodecAudioDecoder().decode(context.contentResolver, uri).collect { chunks += it }
         val samples = FloatArray(chunks.sumOf { it.samples.size })
