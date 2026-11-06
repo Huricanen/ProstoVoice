@@ -3,9 +3,14 @@
 #include <algorithm>
 #include <thread>
 #include <string>
+#include <mutex>
 #include <whisper.h>
 
 namespace {
+
+std::mutex g_whisper_mutex;
+whisper_context* g_whisper_context = nullptr;
+std::string g_whisper_model_path;
 
 jstring ToString(JNIEnv* env, const char* value) {
     return env->NewStringUTF(value);
@@ -54,9 +59,15 @@ Java_com_prostovoice_nativebridge_NativePipeline_nativeTranscribePcm(
     __android_log_print(ANDROID_LOG_INFO, "ProstoVoiceWhisper", "Starting inference: %d samples, %d Hz", sample_count, sample_rate);
     jfloat* samples = env->GetFloatArrayElements(pcm, nullptr);
     const char* model = env->GetStringUTFChars(model_path, nullptr);
-    auto context_params = whisper_context_default_params();
-    whisper_context* context = whisper_init_from_file_with_params(model, context_params);
+    std::lock_guard<std::mutex> lock(g_whisper_mutex);
+    if (g_whisper_context == nullptr || g_whisper_model_path != model) {
+        if (g_whisper_context != nullptr) whisper_free(g_whisper_context);
+        auto context_params = whisper_context_default_params();
+        g_whisper_context = whisper_init_from_file_with_params(model, context_params);
+        g_whisper_model_path = model;
+    }
     env->ReleaseStringUTFChars(model_path, model);
+    whisper_context* context = g_whisper_context;
     if (context == nullptr) {
         env->ReleaseFloatArrayElements(pcm, samples, JNI_ABORT);
         return ToString(env, "{\"status\":\"model_load_failed\",\"engine\":\"whisper.cpp\"}");
@@ -74,7 +85,6 @@ Java_com_prostovoice_nativebridge_NativePipeline_nativeTranscribePcm(
     __android_log_print(ANDROID_LOG_INFO, "ProstoVoiceWhisper", "whisper_full returned %d", result);
     env->ReleaseFloatArrayElements(pcm, samples, JNI_ABORT);
     if (result != 0) {
-        whisper_free(context);
         return ToString(env, "{\"status\":\"inference_failed\",\"engine\":\"whisper.cpp\"}");
     }
     std::string json = "{\"status\":\"ok\",\"engine\":\"whisper.cpp\",\"segments\":[";
@@ -86,7 +96,6 @@ Java_com_prostovoice_nativebridge_NativePipeline_nativeTranscribePcm(
                 ",\"text\":\"" + EscapeJson(whisper_full_get_segment_text(context, i)) + "\"}";
     }
     json += "]}";
-    whisper_free(context);
     return ToString(env, json);
 }
 
