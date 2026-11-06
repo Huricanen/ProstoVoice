@@ -1,4 +1,5 @@
 #include <jni.h>
+#include <android/log.h>
 #include <string>
 #include <whisper.h>
 
@@ -49,6 +50,7 @@ Java_com_prostovoice_nativebridge_NativePipeline_nativeTranscribePcm(
         return ToString(env, "{\"status\":\"invalid_config\",\"engine\":\"whisper.cpp\"}");
     }
     const jsize sample_count = env->GetArrayLength(pcm);
+    __android_log_print(ANDROID_LOG_INFO, "ProstoVoiceWhisper", "Starting inference: %d samples, %d Hz", sample_count, sample_rate);
     jfloat* samples = env->GetFloatArrayElements(pcm, nullptr);
     const char* model = env->GetStringUTFChars(model_path, nullptr);
     auto context_params = whisper_context_default_params();
@@ -66,6 +68,7 @@ Java_com_prostovoice_nativebridge_NativePipeline_nativeTranscribePcm(
     params.language = "auto";
     params.n_threads = 4;
     const int result = whisper_full(context, params, samples, static_cast<int>(sample_count));
+    __android_log_print(ANDROID_LOG_INFO, "ProstoVoiceWhisper", "whisper_full returned %d", result);
     env->ReleaseFloatArrayElements(pcm, samples, JNI_ABORT);
     if (result != 0) {
         whisper_free(context);

@@ -2,6 +2,7 @@ package com.prostovoice.orchestration
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import com.prostovoice.audio.MediaCodecAudioDecoder
 import com.prostovoice.audio.PcmAudioChunk
 import com.prostovoice.domain.AsrSegment
@@ -30,7 +31,10 @@ class WhisperTranscriptionOrchestrator(
             chunk.samples.copyInto(samples, offset)
             offset += chunk.samples.size
         }
+        Log.i(TAG, "Decoded ${samples.size} samples (${samples.size / 16_000f}s), starting Whisper")
+        val startedAt = System.nanoTime()
         val response = JSONObject(NativePipeline.transcribePcm(samples, 16_000, model.absolutePath))
+        Log.i(TAG, "Whisper finished in ${(System.nanoTime() - startedAt) / 1_000_000} ms")
         check(response.optString("status") == "ok") {
             "Whisper завершился с ошибкой: ${response.optString("status", "unknown")}"
         }
@@ -51,5 +55,6 @@ class WhisperTranscriptionOrchestrator(
 
     companion object {
         const val DEFAULT_MODEL_FILE = "ggml-large-v3-q5_0.bin"
+        private const val TAG = "ProstoVoiceWhisper"
     }
 }
