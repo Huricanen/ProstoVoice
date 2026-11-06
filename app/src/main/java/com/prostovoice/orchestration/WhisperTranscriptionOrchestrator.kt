@@ -46,15 +46,37 @@ class WhisperTranscriptionOrchestrator(
             }
         }
         val durationMs = samples.size * 1_000L / 16_000L
+        val speakerSegments = runCatching {
+            val segmentation = WhisperModelStore(context, SEGMENTATION_MODEL).ensureModel()
+            val embedding = WhisperModelStore(context, EMBEDDING_MODEL).ensureModel()
+            val diarization = JSONObject(
+                NativePipeline.diarizePcm(samples, 16_000, segmentation.absolutePath, embedding.absolutePath),
+            )
+            check(diarization.optString("status") == "ok")
+            buildList {
+                val segments = diarization.optJSONArray("segments") ?: return@buildList
+                for (index in 0 until segments.length()) {
+                    val item = segments.getJSONObject(index)
+                    add(com.prostovoice.domain.SpeakerSegment(
+                        item.optString("speaker"), item.optLong("start_ms"), item.optLong("end_ms"),
+                    ))
+                }
+            }
+        }.getOrElse { error ->
+            Log.w(TAG, "Diarization unavailable; using UNKNOWN speakers", error)
+            emptyList()
+        }
         return Transcript(
             sourceName = uri.lastPathSegment ?: "audio",
             durationMs = durationMs,
-            segments = TranscriptAligner.align(asr, emptyList(), durationMs),
+            segments = TranscriptAligner.align(asr, speakerSegments, durationMs),
         )
     }
 
     companion object {
         const val DEFAULT_MODEL_FILE = "ggml-small-q5_1.bin"
+        const val SEGMENTATION_MODEL = "pyannote-segmentation-3.0-int8.onnx"
+        const val EMBEDDING_MODEL = "eres2net-base-3dspeaker-16k.onnx"
         private const val TAG = "ProstoVoiceWhisper"
     }
 }

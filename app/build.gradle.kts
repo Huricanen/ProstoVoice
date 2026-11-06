@@ -55,6 +55,7 @@ android {
     // The local Whisper GGML file is provisioned under models/whisper and is
     // included in the APK as an uncompressed asset for offline first run.
     sourceSets["main"].assets.srcDir(rootProject.file("models/whisper"))
+    sourceSets["main"].assets.srcDir(rootProject.file("models/diarization"))
     androidResources {
         noCompress += listOf("bin")
     }
