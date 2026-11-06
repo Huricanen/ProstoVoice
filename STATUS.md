@@ -20,6 +20,7 @@
 - [x] `assembleDebug` успешно выполнен на JDK 17; APK создан размером 9 495 037 байт.
 - [x] `test` успешно выполнен; debug/release unit test tasks прошли.
 - [x] PCM 16-bit WAV decoder, mono downmix и 16 kHz resampling добавлены; unit tests проходят.
+- [x] Offline WorkManager request/worker с progress и fallback marker добавлен; unit tests проходят.
 - [ ] Whisper.cpp и sherpa-onnx.
 - [ ] Модели и лицензии на их распространение.
 - [ ] Тесты, CI, сборка APK и проверки устройства.
@@ -27,6 +28,7 @@
 - [ ] Проверка native ABI: NDK и CMake не найдены.
 - [ ] Native toolchain: NDK и CMake не найдены.
 - [ ] MP3/M4A decoder через MediaExtractor/MediaCodec.
+- [ ] Подключить WorkManager к реальному orchestrator вместо placeholder.
 - [ ] Instrumented/Compose tests на эмуляторе или телефоне.
 
 ## Ожидаемое событие
