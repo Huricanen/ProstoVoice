@@ -174,12 +174,21 @@ private fun ProstoVoiceApp() {
                 if (state.history.isNotEmpty()) {
                     Text("Библиотека обработок", style = MaterialTheme.typography.titleMedium)
                     state.history.asReversed().forEach { item ->
-                        Button(
+                        Row(
                             modifier = Modifier.fillMaxWidth(),
-                            enabled = !state.isProcessing,
-                            onClick = { viewModel.openHistory(item) },
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Text("${item.transcript.sourceName} · ${item.transcript.segments.size} реплик")
+                            Button(
+                                modifier = Modifier.weight(1f),
+                                enabled = !state.isProcessing,
+                                onClick = { viewModel.openHistory(item) },
+                            ) {
+                                Text("${item.transcript.sourceName} · ${item.transcript.segments.size} реплик")
+                            }
+                            Button(
+                                enabled = !state.isProcessing,
+                                onClick = { viewModel.removeHistory(item) },
+                            ) { Text("Удалить") }
                         }
                     }
                 }

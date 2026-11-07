@@ -39,6 +39,18 @@ class HistoryStore(context: Context) {
         if (!temporary.renameTo(file)) error("Не удалось сохранить библиотеку обработок")
     }
 
+    @Synchronized
+    fun remove(id: String) {
+        val updated = load().filterNot { it.id == id }
+        val temporary = appContext.getFileStreamPath("$FILE_NAME.tmp")
+        temporary.writeText(JSONArray(updated.map { item ->
+            JSONObject().apply {
+                put("id", item.id); put("uri", item.uri); put("transcript", encode(item.transcript))
+            }
+        }).toString(), Charsets.UTF_8)
+        if (!temporary.renameTo(file)) error("Не удалось обновить библиотеку обработок")
+    }
+
     private fun encode(transcript: Transcript) = JSONObject().apply {
         put("source_name", transcript.sourceName); put("duration_ms", transcript.durationMs)
         put("processing_time_ms", transcript.processingTimeMs)

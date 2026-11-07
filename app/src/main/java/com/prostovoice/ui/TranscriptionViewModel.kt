@@ -65,6 +65,16 @@ class TranscriptionViewModel(application: Application) : AndroidViewModel(applic
         mutableState.value = state.value.copy(selectedUri = Uri.parse(item.uri), transcript = item.transcript, errorMessage = null)
     }
 
+    fun removeHistory(item: HistoryItem) {
+        historyStore.remove(item.id)
+        val current = state.value
+        mutableState.value = current.copy(
+            history = historyStore.load(),
+            selectedUri = if (current.selectedUri?.toString() == item.uri) null else current.selectedUri,
+            transcript = if (current.selectedUri?.toString() == item.uri) null else current.transcript,
+        )
+    }
+
     fun transcribe() {
         transcribe(forcedSpeakerCount = null)
     }
