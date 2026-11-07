@@ -34,6 +34,10 @@ std::string EscapeJson(const char* value) {
     return result;
 }
 
+std::string EscapeJson(const std::string& value) {
+    return EscapeJson(value.c_str());
+}
+
 }  // namespace
 
 extern "C" JNIEXPORT jstring JNICALL
@@ -79,6 +83,7 @@ Java_com_prostovoice_nativebridge_NativePipeline_nativeTranscribePcm(
     params.print_progress = false;
     params.print_realtime = false;
     params.print_timestamps = false;
+    params.token_timestamps = true;
     params.no_context = true;
     params.language = "auto";
     const unsigned int cores = std::thread::hardware_concurrency();
@@ -96,7 +101,23 @@ Java_com_prostovoice_nativebridge_NativePipeline_nativeTranscribePcm(
         if (i > 0) json += ',';
         json += "{\"start_ms\":" + std::to_string(whisper_full_get_segment_t0(context, i) * 10) +
                 ",\"end_ms\":" + std::to_string(whisper_full_get_segment_t1(context, i) * 10) +
-                ",\"text\":\"" + EscapeJson(whisper_full_get_segment_text(context, i)) + "\"}";
+                ",\"text\":\"" + EscapeJson(whisper_full_get_segment_text(context, i)) + "\",\"words\":[";
+        const int token_count = whisper_full_n_tokens(context, i);
+        bool first_word = true;
+        for (int token = 0; token < token_count; ++token) {
+            const char* token_text = whisper_full_get_token_text(context, i, token);
+            const int64_t token_start = whisper_full_get_token_t0(context, i, token) * 10;
+            const int64_t token_end = whisper_full_get_token_t1(context, i, token) * 10;
+            if (token_text == nullptr || token_end <= token_start) continue;
+            std::string text = token_text;
+            if (text.find("<|") == 0) continue;
+            if (!first_word) json += ',';
+            first_word = false;
+            json += "{\"start_ms\":" + std::to_string(token_start) +
+                    ",\"end_ms\":" + std::to_string(token_end) +
+                    ",\"text\":\"" + EscapeJson(text) + "\"}";
+        }
+        json += "]}";
     }
     json += "]}";
     return ToString(env, json);

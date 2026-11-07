@@ -4,6 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 import com.prostovoice.domain.SpeakerSegment
 import com.prostovoice.domain.TranscriptAligner
+import com.prostovoice.domain.AsrWord
 
 class SpeakerClusteringTest {
     @Test
@@ -20,6 +21,24 @@ class SpeakerClusteringTest {
             listOf("speaker_1", "speaker_2", "speaker_3", "speaker_2"),
             result.map { it.speaker },
         )
+    }
+
+    @Test
+    fun `assigns words to speakers at word timestamps`() {
+        val result = TranscriptAligner.alignWords(
+            words = listOf(
+                AsrWord("Первый", 0, 500),
+                AsrWord("голос", 500, 1000),
+                AsrWord("второй", 1200, 1700),
+            ),
+            speakerSegments = listOf(
+                SpeakerSegment("speaker_6", 0, 1100),
+                SpeakerSegment("speaker_1", 1100, 2000),
+            ),
+            durationMs = 2_000,
+        )
+        assertEquals(listOf("speaker_1", "speaker_2"), result.map { it.speaker })
+        assertEquals("Первый голос", result.first().text)
     }
 
     @Test
