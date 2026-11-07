@@ -12,6 +12,7 @@ object WindowedSpeakerClustering {
         windows: List<WindowEmbedding>,
         requestedClusters: Int,
         singleSpeakerMaxDistance: Float = 0.50f,
+        temporalGuardMinDurationMs: Long = 45_000L,
     ): List<SpeakerSegment> {
         if (windows.isEmpty()) return emptyList()
         val dimensions = windows.first().values.size
@@ -48,7 +49,9 @@ object WindowedSpeakerClustering {
             if (assignments[index] != assignments[index - 1]) switches++
         }
         val switchRate = switches / assignments.size.coerceAtLeast(2).toFloat()
-        if (count > 1 && assignments.size >= 8 && switchRate > 0.12f) {
+        val durationMs = windows.maxOf { it.endMs } - windows.minOf { it.startMs }
+        if (count > 1 && durationMs >= temporalGuardMinDurationMs &&
+            assignments.size >= 8 && switchRate > 0.12f) {
             assignments.fill(0)
         }
         val result = mutableListOf<SpeakerSegment>()

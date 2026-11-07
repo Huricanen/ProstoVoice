@@ -41,6 +41,7 @@ class WindowedSpeakerClusteringTest {
             },
             requestedClusters = 4,
             singleSpeakerMaxDistance = 0f,
+            temporalGuardMinDurationMs = 5_000L,
         )
 
         assertEquals(listOf("speaker_1"), result.map { it.speaker }.distinct())
