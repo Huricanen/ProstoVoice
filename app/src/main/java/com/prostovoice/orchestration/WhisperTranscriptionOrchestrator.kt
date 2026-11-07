@@ -71,7 +71,7 @@ class WhisperTranscriptionOrchestrator(
                 NativePipeline.diarizePcm(samples, 16_000, segmentation.absolutePath, embedding.absolutePath),
             )
             check(diarization.optString("status") == "ok")
-            buildList {
+            val rawSegments = buildList {
                 val segments = diarization.optJSONArray("segments") ?: return@buildList
                 for (index in 0 until segments.length()) {
                     val item = segments.getJSONObject(index)
@@ -80,6 +80,7 @@ class WhisperTranscriptionOrchestrator(
                     ))
                 }
             }
+            TranscriptAligner.normalizeSpeakerLabels(rawSegments)
         }.getOrElse { error ->
             Log.w(TAG, "Diarization unavailable; using UNKNOWN speakers", error)
             emptyList()

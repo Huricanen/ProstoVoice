@@ -30,6 +30,16 @@ data class SpeakerSegment(
 )
 
 object TranscriptAligner {
+    fun normalizeSpeakerLabels(segments: List<SpeakerSegment>): List<SpeakerSegment> {
+        val labels = linkedMapOf<String, String>()
+        return segments
+            .sortedWith(compareBy<SpeakerSegment> { it.startMs }.thenBy { it.endMs })
+            .map { segment ->
+                val normalized = labels.getOrPut(segment.speaker) { "speaker_${labels.size + 1}" }
+                segment.copy(speaker = normalized)
+            }
+    }
+
     fun align(
         asrSegments: List<AsrSegment>,
         speakerSegments: List<SpeakerSegment>,
@@ -75,7 +85,13 @@ object TranscriptAligner {
             }
         }
 
-        val smoothed = smoothShortSwitches(aligned, shortSwitchThresholdMs.coerceAtLeast(0L))
+        val detectedSpeakers = aligned.map { it.speaker }.distinct().size
+        val smoothingThreshold = if (detectedSpeakers >= 4) {
+            minOf(shortSwitchThresholdMs, 600L)
+        } else {
+            shortSwitchThresholdMs
+        }
+        val smoothed = smoothShortSwitches(aligned, smoothingThreshold.coerceAtLeast(0L))
         return mergeAdjacent(smoothed)
     }
 
