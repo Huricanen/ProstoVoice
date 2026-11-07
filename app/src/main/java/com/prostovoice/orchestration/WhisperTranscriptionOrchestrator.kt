@@ -117,7 +117,7 @@ class WhisperTranscriptionOrchestrator(
     }
 
     companion object {
-        const val DEFAULT_MODEL_FILE = "ggml-small-q5_1.bin"
+        const val DEFAULT_MODEL_FILE = "ggml-large-v3-turbo-q5_0.bin"
         const val SEGMENTATION_MODEL = "pyannote-segmentation-3.0-int8.onnx"
         const val EMBEDDING_MODEL = "eres2net-base-3dspeaker-16k.onnx"
         private const val TAG = "ProstoVoiceWhisper"

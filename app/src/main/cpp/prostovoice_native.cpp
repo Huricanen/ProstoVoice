@@ -75,15 +75,20 @@ Java_com_prostovoice_nativebridge_NativePipeline_nativeTranscribePcm(
         env->ReleaseFloatArrayElements(pcm, samples, JNI_ABORT);
         return ToString(env, "{\"status\":\"model_load_failed\",\"engine\":\"whisper.cpp\"}");
     }
-    auto params = whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
+    auto params = whisper_full_default_params(WHISPER_SAMPLING_BEAM_SEARCH);
     params.print_progress = false;
     params.print_realtime = false;
     params.print_timestamps = false;
     params.no_context = true;
-    params.language = "auto";
+    params.language = "ru";
+    params.temperature = 0.0f;
+    params.temperature_inc = 0.2f;
+    params.beam_search.beam_size = 5;
     const unsigned int cores = std::thread::hardware_concurrency();
     params.n_threads = static_cast<int>(cores > 2 ? std::min(8u, cores - 1u) : 2u);
-    __android_log_print(ANDROID_LOG_INFO, "ProstoVoiceWhisper", "Using %d threads", params.n_threads);
+    __android_log_print(ANDROID_LOG_INFO, "ProstoVoiceWhisper",
+                        "Using %d threads, language=ru, beam_size=%d",
+                        params.n_threads, params.beam_search.beam_size);
     const int result = whisper_full(context, params, samples, static_cast<int>(sample_count));
     __android_log_print(ANDROID_LOG_INFO, "ProstoVoiceWhisper", "whisper_full returned %d", result);
     env->ReleaseFloatArrayElements(pcm, samples, JNI_ABORT);
