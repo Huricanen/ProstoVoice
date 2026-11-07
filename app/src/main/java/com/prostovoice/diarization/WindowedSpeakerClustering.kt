@@ -18,11 +18,13 @@ object WindowedSpeakerClustering {
         val dimensions = windows.first().values.size
         require(dimensions > 0 && windows.all { it.values.size == dimensions })
         val vectors = windows.map { normalize(it.values) }
+        val durationMs = windows.maxOf { it.endMs } - windows.minOf { it.startMs }
         val global = normalize(FloatArray(dimensions).also { mean ->
             vectors.forEach { vector -> vector.forEachIndexed { index, value -> mean[index] += value } }
         })
         val maxGlobalDistance = vectors.maxOf { 1f - cosine(it, global) }
-        val count = if (maxGlobalDistance <= singleSpeakerMaxDistance) {
+        val count = if (durationMs >= temporalGuardMinDurationMs &&
+            maxGlobalDistance <= singleSpeakerMaxDistance) {
             1
         } else {
             requestedClusters.coerceIn(1, windows.size)
@@ -49,7 +51,6 @@ object WindowedSpeakerClustering {
             if (assignments[index] != assignments[index - 1]) switches++
         }
         val switchRate = switches / assignments.size.coerceAtLeast(2).toFloat()
-        val durationMs = windows.maxOf { it.endMs } - windows.minOf { it.startMs }
         if (count > 1 && durationMs >= temporalGuardMinDurationMs &&
             assignments.size >= 8 && switchRate > 0.12f) {
             assignments.fill(0)

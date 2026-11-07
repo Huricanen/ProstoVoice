@@ -27,6 +27,7 @@ class WindowedSpeakerClusteringTest {
                 WindowEmbedding(1000, 2500, floatArrayOf(0.98f, 0.02f)),
             ),
             requestedClusters = 4,
+            temporalGuardMinDurationMs = 0L,
         )
 
         assertEquals(listOf("speaker_1"), result.map { it.speaker }.distinct())
