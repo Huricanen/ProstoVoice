@@ -23,12 +23,6 @@ data class AsrSegment(
     val endMs: Long,
 )
 
-data class AsrWord(
-    val text: String,
-    val startMs: Long,
-    val endMs: Long,
-)
-
 data class SpeakerSegment(
     val speaker: String,
     val startMs: Long,
@@ -99,44 +93,6 @@ object TranscriptAligner {
         }
         val smoothed = smoothShortSwitches(aligned, smoothingThreshold.coerceAtLeast(0L))
         return mergeAdjacent(smoothed)
-    }
-
-    fun alignWords(
-        words: List<AsrWord>,
-        speakerSegments: List<SpeakerSegment>,
-        durationMs: Long,
-    ): List<TranscriptSegment> {
-        if (words.isEmpty()) return emptyList()
-        val duration = durationMs.coerceAtLeast(0L)
-        val speakers = normalizeSpeakerLabels(speakerSegments)
-        val aligned = words.mapNotNull { word ->
-            val start = word.startMs.coerceIn(0L, duration)
-            val end = word.endMs.coerceIn(start, duration)
-            if (word.text.isBlank() || end <= start) return@mapNotNull null
-            val speaker = speakers.maxByOrNull { overlap(start, end, it.startMs, it.endMs) }
-                ?.takeIf { overlap(start, end, it.startMs, it.endMs) > 0L }?.speaker ?: "UNKNOWN"
-            TranscriptSegment(speaker, word.text, start, end)
-        }
-        return mergeWordSegments(aligned)
-    }
-
-    private fun mergeWordSegments(segments: List<TranscriptSegment>): List<TranscriptSegment> {
-        val result = mutableListOf<TranscriptSegment>()
-        for (segment in segments) {
-            val previous = result.lastOrNull()
-            if (previous != null && previous.speaker == segment.speaker) {
-                result[result.lastIndex] = previous.copy(
-                    text = (previous.text + " " + segment.text)
-                        .replace(Regex("\\s+"), " ")
-                        .replace(Regex("\\s+([,.!?;:%])"), "$1")
-                        .trim(),
-                    endMs = maxOf(previous.endMs, segment.endMs),
-                )
-            } else {
-                result += segment.copy(text = segment.text.trim())
-            }
-        }
-        return result.filter { it.text.isNotBlank() }
     }
 
     private fun overlap(startA: Long, endA: Long, startB: Long, endB: Long): Long =

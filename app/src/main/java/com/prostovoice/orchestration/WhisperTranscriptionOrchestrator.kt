@@ -7,7 +7,6 @@ import com.prostovoice.audio.MediaCodecAudioDecoder
 import com.prostovoice.audio.PcmAudioChunk
 import com.prostovoice.audio.AudioChunker
 import com.prostovoice.domain.AsrSegment
-import com.prostovoice.domain.AsrWord
 import com.prostovoice.domain.Transcript
 import com.prostovoice.domain.TranscriptAligner
 import com.prostovoice.nativebridge.NativePipeline
@@ -42,7 +41,6 @@ class WhisperTranscriptionOrchestrator(
         Log.i(TAG, "Decoded ${samples.size} samples (${samples.size / 16_000f}s), starting Whisper")
         val startedAt = System.nanoTime()
         val asr = mutableListOf<AsrSegment>()
-        val asrWords = mutableListOf<AsrWord>()
         val inferenceChunks = AudioChunker.split(samples)
         inferenceChunks.forEachIndexed { index, chunk ->
             Log.i(TAG, "Whisper chunk ${index + 1}/${inferenceChunks.size}: ${chunk.samples.size / 16_000f}s")
@@ -59,17 +57,6 @@ class WhisperTranscriptionOrchestrator(
                     item.optLong("start_ms") + offsetMs,
                     item.optLong("end_ms") + offsetMs,
                 )
-                val words = item.optJSONArray("words")
-                if (words != null) {
-                    for (wordIndex in 0 until words.length()) {
-                        val word = words.getJSONObject(wordIndex)
-                        asrWords += AsrWord(
-                            text = word.optString("text"),
-                            startMs = word.optLong("start_ms") + offsetMs,
-                            endMs = word.optLong("end_ms") + offsetMs,
-                        )
-                    }
-                }
             }
             onProgress(0.10f + 0.65f * (index + 1).toFloat() / inferenceChunks.size, "Распознавание речи")
         }
@@ -99,15 +86,10 @@ class WhisperTranscriptionOrchestrator(
             emptyList()
         }
         onProgress(0.98f, "Сборка результата")
-        val aligned = if (asrWords.isNotEmpty()) {
-            TranscriptAligner.alignWords(deduplicateWords(asrWords), speakerSegments, durationMs)
-        } else {
-            TranscriptAligner.align(deduplicatedAsr, speakerSegments, durationMs)
-        }
         return Transcript(
             sourceName = uri.lastPathSegment ?: "audio",
             durationMs = durationMs,
-            segments = aligned,
+            segments = TranscriptAligner.align(deduplicatedAsr, speakerSegments, durationMs),
         )
     }
 
@@ -118,14 +100,4 @@ class WhisperTranscriptionOrchestrator(
         private const val TAG = "ProstoVoiceWhisper"
     }
 
-    private fun deduplicateWords(words: List<AsrWord>): List<AsrWord> {
-        val result = mutableListOf<AsrWord>()
-        for (word in words.sortedBy { it.startMs }) {
-            val normalized = word.text.trim()
-            val duplicate = result.lastOrNull { it.startMs <= word.startMs && word.startMs - it.startMs <= 2_000L }
-                ?.takeIf { it.text.trim() == normalized }
-            if (duplicate == null) result += word
-        }
-        return result
-    }
 }

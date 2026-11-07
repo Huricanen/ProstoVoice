@@ -21,7 +21,7 @@ ProstoVoice — планируемое Android-приложение для ло�
 - После завершения worker публикует отдельное auto-cancel уведомление об успехе или ошибке, поскольку foreground-уведомление удаляется системой вместе с завершением worker.
 - На Android 13+ UI запрашивает `POST_NOTIFICATIONS` и предоставляет прямой переход в системные настройки уведомлений приложения.
 - Перед alignment native speaker IDs нормализуются по первому появлению; для результатов с 4+ speakers применяется более короткий порог сглаживания, чтобы не удалять быстрые переключения.
-- Whisper JNI передаёт token-level timestamps; при наличии tokens orchestrator назначает speaker каждому слову и собирает соседние слова в реплики, сохраняя fallback на segment-level alignment.
+- Рабочий pipeline использует segment-level Whisper timestamps и diarization alignment; экспериментальный token-level путь отозван после регрессии качества и оставлен для отдельного исследования.
 - `tools/evaluate_transcript.py` сравнивает два hackathon JSON и вычисляет WER/RTF.
 
 ## Архитектура базового уровня

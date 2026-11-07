@@ -16,8 +16,12 @@ import androidx.work.workDataOf
 import com.prostovoice.orchestration.WhisperTranscriptionOrchestrator
 import com.prostovoice.storage.TranscriptStore
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Background boundary for long-running transcription.
@@ -40,21 +44,29 @@ class TranscriptionWorker(
         setForeground(createForegroundInfo(0, "Подготовка"))
         setProgress(workDataOf(KEY_PROGRESS to 0, KEY_STAGE to "Подготовка"))
         val startedAt = android.os.SystemClock.elapsedRealtime()
-        runCatching {
-            WhisperTranscriptionOrchestrator(applicationContext).transcribe(uri) { progress, stage ->
-                runBlocking {
-                    val percentage = (progress * 100f).toInt().coerceIn(0, 100)
-                    setProgress(
-                        workDataOf(
-                            KEY_PROGRESS to percentage,
-                            KEY_STAGE to stage,
-                        ),
-                    )
-                    setForeground(createForegroundInfo(percentage, stage))
-                }
+        val progressState = AtomicReference(ProgressState(0, "Подготовка"))
+        val progressMonitor = launch {
+            while (isActive) {
+                delay(500L)
+                val current = progressState.get()
+                setProgress(
+                    workDataOf(
+                        KEY_PROGRESS to current.progress,
+                        KEY_STAGE to current.stage,
+                    ),
+                )
+                setForeground(createForegroundInfo(current.progress, current.stage))
             }
         }
-            .fold(
+        val transcription = runCatching {
+            WhisperTranscriptionOrchestrator(applicationContext).transcribe(uri) { progress, stage ->
+                progressState.set(
+                    ProgressState((progress * 100f).toInt().coerceIn(0, 100), stage),
+                )
+            }
+        }
+        progressMonitor.cancelAndJoin()
+        return@withContext transcription.fold(
                 onSuccess = { transcript ->
                     val elapsedMs = android.os.SystemClock.elapsedRealtime() - startedAt
                     val completed = transcript.copy(processingTimeMs = elapsedMs)
@@ -86,6 +98,8 @@ class TranscriptionWorker(
                 },
             )
     }
+
+    private data class ProgressState(val progress: Int, val stage: String)
 
     private fun errorData(message: String): Data = workDataOf(KEY_ERROR to message)
 
