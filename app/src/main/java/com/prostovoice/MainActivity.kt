@@ -171,6 +171,18 @@ private fun ProstoVoiceApp() {
                 ) {
                     Text("Выбрать аудиофайл")
                 }
+                if (state.history.isNotEmpty()) {
+                    Text("Библиотека обработок", style = MaterialTheme.typography.titleMedium)
+                    state.history.asReversed().forEach { item ->
+                        Button(
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !state.isProcessing,
+                            onClick = { viewModel.openHistory(item) },
+                        ) {
+                            Text("${item.transcript.sourceName} · ${item.transcript.segments.size} реплик")
+                        }
+                    }
+                }
                 state.selectedUri?.let { uri ->
                     Text("Выбран файл: ${uri.lastPathSegment ?: uri}")
                     Button(

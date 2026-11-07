@@ -7,6 +7,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.prostovoice.domain.Transcript
 import com.prostovoice.storage.TranscriptStore
+import com.prostovoice.storage.HistoryItem
+import com.prostovoice.storage.HistoryStore
 import com.prostovoice.worker.TranscriptionWorkRequest
 import com.prostovoice.worker.TranscriptionWorker
 import androidx.work.ExistingWorkPolicy
@@ -29,10 +31,12 @@ data class TranscriptionUiState(
     val elapsedMs: Long = 0L,
     val transcript: Transcript? = null,
     val errorMessage: String? = null,
+    val history: List<HistoryItem> = emptyList(),
 )
 
 class TranscriptionViewModel(application: Application) : AndroidViewModel(application) {
     private val transcriptStore = TranscriptStore(application)
+    private val historyStore = HistoryStore(application)
     private val workManager = WorkManager.getInstance(application)
     private val mutableState = MutableStateFlow(TranscriptionUiState())
     val state: StateFlow<TranscriptionUiState> = mutableState.asStateFlow()
@@ -43,12 +47,22 @@ class TranscriptionViewModel(application: Application) : AndroidViewModel(applic
             mutableState.value = TranscriptionUiState(
                 transcript = transcript,
                 elapsedMs = transcript.processingTimeMs,
+                history = historyStore.load(),
             )
-        }
+        } ?: run { mutableState.value = mutableState.value.copy(history = historyStore.load()) }
     }
 
     fun selectFile(uri: Uri) {
-        mutableState.value = TranscriptionUiState(selectedUri = uri)
+        runCatching {
+            getApplication<Application>().contentResolver.takePersistableUriPermission(
+                uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION,
+            )
+        }
+        mutableState.value = state.value.copy(selectedUri = uri, transcript = null, errorMessage = null)
+    }
+
+    fun openHistory(item: HistoryItem) {
+        mutableState.value = state.value.copy(selectedUri = Uri.parse(item.uri), transcript = item.transcript, errorMessage = null)
     }
 
     fun transcribe() {
@@ -105,6 +119,7 @@ class TranscriptionViewModel(application: Application) : AndroidViewModel(applic
                             processingStage = "Готово",
                             elapsedMs = info.outputData.getLong(TranscriptionWorker.KEY_ELAPSED_MS, state.value.elapsedMs),
                             transcript = transcript,
+                            history = historyStore.load(),
                         )
                         timerJob.cancel()
                         return@collect

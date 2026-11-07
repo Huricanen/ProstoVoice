@@ -15,6 +15,7 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.prostovoice.orchestration.WhisperTranscriptionOrchestrator
 import com.prostovoice.storage.TranscriptStore
+import com.prostovoice.storage.HistoryStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
@@ -72,6 +73,7 @@ class TranscriptionWorker(
                     val elapsedMs = android.os.SystemClock.elapsedRealtime() - startedAt
                     val completed = transcript.copy(processingTimeMs = elapsedMs)
                     TranscriptStore(applicationContext).save(completed)
+                    HistoryStore(applicationContext).add(uri.toString(), completed)
                     setProgress(workDataOf(KEY_PROGRESS to 100))
                     showCompletionNotification(
                         title = "Расшифровка завершена",
