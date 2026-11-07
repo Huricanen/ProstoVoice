@@ -20,11 +20,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.Canvas
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.SmallFloatingActionButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -37,9 +42,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.Alignment
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import com.prostovoice.domain.Transcript
@@ -60,6 +67,7 @@ private fun ProstoVoiceApp() {
     val viewModel: TranscriptionViewModel = viewModel()
     val state by viewModel.state.collectAsState()
     var pendingExport by remember { mutableStateOf<String?>(null) }
+    var exportExpanded by remember { mutableStateOf(false) }
     var deviceProfile by remember { mutableStateOf<String?>(null) }
     val context = androidx.compose.ui.platform.LocalContext.current
     val notificationPermissionLauncher = rememberLauncherForActivityResult(RequestPermission()) { }
@@ -91,12 +99,44 @@ private fun ProstoVoiceApp() {
 
     MaterialTheme {
         Surface(modifier = Modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier
-                    .padding(24.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
+            Scaffold(
+                bottomBar = {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .navigationBarsPadding()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalAlignment = Alignment.End,
+                    ) {
+                        state.transcript?.let { transcript ->
+                            ExportActions(
+                                expanded = exportExpanded,
+                                onToggle = { exportExpanded = !exportExpanded },
+                                onTxt = {
+                                    pendingExport = transcript.toTxt()
+                                    exportLauncher.launch("${transcript.sourceName}.txt")
+                                    exportExpanded = false
+                                },
+                                onJson = {
+                                    pendingExport = transcript.toJson()
+                                    jsonExportLauncher.launch("${transcript.sourceName}.json")
+                                    exportExpanded = false
+                                },
+                            )
+                        }
+                        state.selectedUri?.let { uri ->
+                            AudioPlayer(uri = uri, transcript = state.transcript)
+                        }
+                    }
+                },
+            ) { contentPadding ->
+                Column(
+                    modifier = Modifier
+                        .padding(contentPadding)
+                        .padding(24.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
                 Text("ProstoVoice", style = MaterialTheme.typography.headlineMedium)
                 Text("Локальная расшифровка аудиозаписей")
                 Button(
@@ -156,20 +196,10 @@ private fun ProstoVoiceApp() {
                 }
                 state.errorMessage?.let { Text("Ошибка: $it", color = MaterialTheme.colorScheme.error) }
                 state.transcript?.let { transcript ->
-                    state.selectedUri?.let { uri ->
-                        AudioPlayer(uri = uri, transcript = transcript)
-                    }
                     TranscriptResult(
                         transcript = transcript,
-                        onTxt = {
-                            pendingExport = transcript.toTxt()
-                            exportLauncher.launch("${transcript.sourceName}.txt")
-                        },
-                        onJson = {
-                            pendingExport = transcript.toJson()
-                            jsonExportLauncher.launch("${transcript.sourceName}.json")
-                        },
                     )
+                }
                 }
             }
         }
@@ -177,20 +207,20 @@ private fun ProstoVoiceApp() {
 }
 
 @androidx.compose.runtime.Composable
-private fun AudioPlayer(uri: android.net.Uri, transcript: Transcript) {
+private fun AudioPlayer(uri: android.net.Uri, transcript: Transcript?) {
     val context = androidx.compose.ui.platform.LocalContext.current
     var player by remember { mutableStateOf<MediaPlayer?>(null) }
     var prepared by remember { mutableStateOf(false) }
     var playing by remember { mutableStateOf(false) }
     var positionMs by remember { mutableStateOf(0L) }
-    var durationMs by remember { mutableStateOf(transcript.durationMs.coerceAtLeast(1L)) }
+    var durationMs by remember { mutableStateOf(transcript?.durationMs?.coerceAtLeast(1L) ?: 1L) }
     var error by remember { mutableStateOf<String?>(null) }
 
     DisposableEffect(uri) {
         val mediaPlayer = MediaPlayer()
         player = mediaPlayer
         mediaPlayer.setOnPreparedListener {
-            durationMs = it.duration.toLong().coerceAtLeast(transcript.durationMs)
+            durationMs = it.duration.toLong().coerceAtLeast(transcript?.durationMs ?: 0L)
             prepared = true
             error = null
         }
@@ -238,14 +268,16 @@ private fun AudioPlayer(uri: android.net.Uri, transcript: Transcript) {
             )
             Canvas(modifier = Modifier.fillMaxWidth().height(30.dp)) {
                 if (durationMs > 0L) {
-                    transcript.segments.drop(1).forEach { segment ->
-                        val x = size.width * (segment.startMs.coerceIn(0L, durationMs).toFloat() / durationMs)
-                        drawLine(
-                            color = Color.Red.copy(alpha = 0.8f),
-                            start = Offset(x, 5f),
-                            end = Offset(x, size.height - 5f),
-                            strokeWidth = 2f,
-                        )
+                    transcript?.segments?.forEachIndexed { index, segment ->
+                        val start = segment.startMs.coerceIn(0L, durationMs).toFloat() / durationMs
+                        val end = segment.endMs.coerceIn(0L, durationMs).toFloat() / durationMs
+                        if (end > start) {
+                            drawRect(
+                                color = speakerColor(index),
+                                topLeft = Offset(size.width * start, 8f),
+                                size = Size(size.width * (end - start), size.height - 16f),
+                            )
+                        }
                     }
                 }
             }
@@ -283,11 +315,38 @@ private fun AudioPlayer(uri: android.net.Uri, transcript: Transcript) {
             ) { Text("Стоп") }
         }
         Text(
-            if (error != null) error!! else "Красные отметки — границы реплик после обработки",
+            if (error != null) error!! else if (transcript == null) "Метки появятся после обработки" else "Цветные блоки — временные интервалы реплик",
             color = if (error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodySmall,
         )
     }
+}
+
+@androidx.compose.runtime.Composable
+private fun ExportActions(
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    onTxt: () -> Unit,
+    onJson: () -> Unit,
+) {
+    Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (expanded) {
+            SmallFloatingActionButton(onClick = onTxt) { Text(".txt") }
+            SmallFloatingActionButton(onClick = onJson) { Text(".json") }
+        }
+        FloatingActionButton(onClick = onToggle) { Text("↥") }
+        Spacer(modifier = Modifier.height(4.dp))
+    }
+}
+
+private fun speakerColor(index: Int): Color {
+    val colors = listOf(
+        Color(0xFF5E81AC),
+        Color(0xFFA3BE8C),
+        Color(0xFFD08770),
+        Color(0xFFB48EAD),
+    )
+    return colors[index % colors.size].copy(alpha = 0.78f)
 }
 
 private fun formatClock(milliseconds: Long): String {
@@ -303,16 +362,10 @@ private fun formatElapsed(milliseconds: Long): String {
 @androidx.compose.runtime.Composable
 private fun TranscriptResult(
     transcript: Transcript,
-    onTxt: () -> Unit,
-    onJson: () -> Unit,
 ) {
     Text("Результат: ${transcript.segments.size} реплик")
     Text("Время обработки: ${formatElapsed(transcript.processingTimeMs)}")
     transcript.segments.forEach { segment ->
         Text("${segment.speaker} [${segment.startMs}–${segment.endMs}]\n${segment.text}")
-    }
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Button(onClick = onTxt) { Text("TXT") }
-        Button(onClick = onJson) { Text("JSON") }
     }
 }
