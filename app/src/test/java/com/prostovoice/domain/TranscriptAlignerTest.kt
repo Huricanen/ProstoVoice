@@ -108,4 +108,18 @@ class TranscriptAlignerTest {
 
         assertEquals("B", result.single().speaker)
     }
+
+    @Test
+    fun removesPartialRepeatedPhraseWhenMergingAdjacentAsrSegments() {
+        val result = TranscriptAligner.align(
+            asrSegments = listOf(
+                AsrSegment("Верно. Предложим ему", 55_000, 58_000),
+                AsrSegment("за ему. предложим ему займы.", 58_000, 61_000),
+            ),
+            speakerSegments = listOf(SpeakerSegment("A", 55_000, 61_000)),
+            durationMs = 61_000,
+        )
+
+        assertEquals("Верно. Предложим ему займы.", result.single().text)
+    }
 }

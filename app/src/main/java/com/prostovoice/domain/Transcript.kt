@@ -184,7 +184,7 @@ object TranscriptAligner {
             val previous = result.lastOrNull()
             if (previous != null && previous.speaker == segment.speaker) {
                 result[result.lastIndex] = previous.copy(
-                    text = listOf(previous.text, segment.text).joinToString(" "),
+                    text = removeNearbyRepeatedPhrase(listOf(previous.text, segment.text).joinToString(" ")),
                     endMs = maxOf(previous.endMs, segment.endMs),
                 )
             } else {
@@ -192,5 +192,25 @@ object TranscriptAligner {
             }
         }
         return result
+    }
+
+    private fun removeNearbyRepeatedPhrase(text: String): String {
+        val words = text.trim().split(Regex("\\s+")).filter(String::isNotBlank)
+        for (phraseSize in 5 downTo 2) {
+            for (first in 0..words.size - phraseSize) {
+                val secondStart = first + phraseSize + 1
+                val secondEnd = minOf(words.size - phraseSize, first + phraseSize + 4)
+                for (second in secondStart..secondEnd) {
+                    val same = words.subList(first, first + phraseSize).indices.all { offset ->
+                        words[first + offset].equals(words[second + offset], ignoreCase = true)
+                    }
+                    if (same) {
+                        return (words.subList(0, first + phraseSize) +
+                            words.subList(second + phraseSize, words.size)).joinToString(" ")
+                    }
+                }
+            }
+        }
+        return text.trim()
     }
 }
