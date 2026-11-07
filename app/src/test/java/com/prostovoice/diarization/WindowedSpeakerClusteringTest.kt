@@ -22,6 +22,20 @@ class WindowedSpeakerClusteringTest {
     }
 
     @Test
+    fun `rejects a tiny fourth cluster`() {
+        val windows = (0 until 13).map { index ->
+            val vector = when {
+                index < 4 -> floatArrayOf(1f, 0f, 0f, 0f)
+                index < 8 -> floatArrayOf(0f, 1f, 0f, 0f)
+                index < 12 -> floatArrayOf(0f, 0f, 1f, 0f)
+                else -> floatArrayOf(0f, 0f, 0f, 1f)
+            }
+            WindowEmbedding(index * 500L, index * 500L + 1500L, vector)
+        }
+        assertEquals(3, WindowedSpeakerClustering.estimateClusterCount(windows))
+    }
+
+    @Test
     fun `clusters short windows and merges adjacent same speaker`() {
         val result = WindowedSpeakerClustering.cluster(
             listOf(

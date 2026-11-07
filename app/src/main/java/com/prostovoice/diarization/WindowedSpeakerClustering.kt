@@ -77,6 +77,10 @@ object WindowedSpeakerClustering {
     private fun silhouetteScore(vectors: List<FloatArray>, count: Int): Float {
         val assignments = kMeans(vectors, count).first
         if (assignments.toSet().size < 2) return 0f
+        val minimumMembers = (vectors.size * 0.15f).toInt().coerceAtLeast(2)
+        if (assignments.toSet().any { cluster -> assignments.count { it == cluster } < minimumMembers }) {
+            return -1f
+        }
         var total = 0f
         vectors.indices.forEach { index ->
             val own = assignments[index]
