@@ -11,7 +11,7 @@ object WindowedSpeakerClustering {
     fun cluster(
         windows: List<WindowEmbedding>,
         requestedClusters: Int,
-        singleSpeakerMaxDistance: Float = 0.20f,
+        singleSpeakerMaxDistance: Float = 0.50f,
     ): List<SpeakerSegment> {
         if (windows.isEmpty()) return emptyList()
         val dimensions = windows.first().values.size
