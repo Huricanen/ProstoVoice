@@ -3,7 +3,7 @@ package com.prostovoice.diarization
 /** Runtime parameters that can be swept against a fixed diarization reference. */
 data class DiarizationConfig(
     val numClusters: Int = 4,
-    val threshold: Float = 0.75f,
+    val threshold: Float = 0.5f,
     val windowShiftRatio: Float = 0.1f,
     val minDurationOnSeconds: Float = 0.4f,
     val minDurationOffSeconds: Float = 0.3f,
