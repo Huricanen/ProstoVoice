@@ -2,20 +2,24 @@ package com.prostovoice.ui
 
 import android.net.Uri
 import android.app.Application
+import android.os.SystemClock
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.prostovoice.domain.Transcript
-import com.prostovoice.orchestration.WhisperTranscriptionOrchestrator
 import com.prostovoice.storage.TranscriptStore
+import com.prostovoice.worker.TranscriptionWorkRequest
+import com.prostovoice.worker.TranscriptionWorker
+import androidx.work.ExistingWorkPolicy
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
-import android.os.SystemClock
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collect
 
 data class TranscriptionUiState(
     val selectedUri: Uri? = null,
@@ -28,10 +32,11 @@ data class TranscriptionUiState(
 )
 
 class TranscriptionViewModel(application: Application) : AndroidViewModel(application) {
-    private val orchestrator = WhisperTranscriptionOrchestrator(application)
     private val transcriptStore = TranscriptStore(application)
+    private val workManager = WorkManager.getInstance(application)
     private val mutableState = MutableStateFlow(TranscriptionUiState())
     val state: StateFlow<TranscriptionUiState> = mutableState.asStateFlow()
+    private var observationJob: Job? = null
 
     init {
         transcriptStore.load()?.let { transcript ->
@@ -46,7 +51,8 @@ class TranscriptionViewModel(application: Application) : AndroidViewModel(applic
     fun transcribe() {
         val uri = state.value.selectedUri ?: return
         if (state.value.isProcessing) return
-        viewModelScope.launch {
+        observationJob?.cancel()
+        observationJob = viewModelScope.launch {
             val startedAt = SystemClock.elapsedRealtime()
             mutableState.value = state.value.copy(
                 isProcessing = true,
@@ -61,33 +67,48 @@ class TranscriptionViewModel(application: Application) : AndroidViewModel(applic
                     delay(250L)
                 }
             }
-            runCatching {
-                withContext(Dispatchers.Default) {
-                    orchestrator.transcribe(uri) { progress, stage ->
+            val request = TranscriptionWorkRequest.create(uri)
+            workManager.enqueueUniqueWork(
+                TranscriptionWorkRequest.UNIQUE_NAME,
+                ExistingWorkPolicy.REPLACE,
+                request,
+            )
+            workManager.getWorkInfoByIdFlow(request.id).collect { info ->
+                if (info == null) return@collect
+                val progress = info.progress.getInt(TranscriptionWorker.KEY_PROGRESS, 0)
+                    .coerceIn(0, 100) / 100f
+                val stage = info.progress.getString(TranscriptionWorker.KEY_STAGE)
+                    ?: state.value.processingStage
+                when (info.state) {
+                    WorkInfo.State.ENQUEUED, WorkInfo.State.BLOCKED, WorkInfo.State.RUNNING -> {
                         mutableState.value = state.value.copy(
-                            progress = progress.coerceIn(0f, 1f),
+                            progress = progress,
                             processingStage = stage,
                         )
                     }
+                    WorkInfo.State.SUCCEEDED -> {
+                        val transcript = transcriptStore.load()
+                        mutableState.value = state.value.copy(
+                            isProcessing = false,
+                            progress = 1f,
+                            processingStage = "Готово",
+                            transcript = transcript,
+                        )
+                        timerJob.cancel()
+                        return@collect
+                    }
+                    WorkInfo.State.FAILED, WorkInfo.State.CANCELLED -> {
+                        mutableState.value = state.value.copy(
+                            isProcessing = false,
+                            processingStage = "",
+                            errorMessage = info.outputData.getString(TranscriptionWorker.KEY_ERROR)
+                                ?: "Не удалось обработать аудиофайл",
+                        )
+                        timerJob.cancel()
+                        return@collect
+                    }
                 }
             }
-                .onSuccess { transcript ->
-                    transcriptStore.save(transcript)
-                    mutableState.value = state.value.copy(
-                        isProcessing = false,
-                        progress = 1f,
-                        processingStage = "Готово",
-                        transcript = transcript,
-                    )
-                }
-                .onFailure { error ->
-                    mutableState.value = state.value.copy(
-                        isProcessing = false,
-                        processingStage = "",
-                        errorMessage = error.message ?: "Не удалось обработать аудиофайл",
-                    )
-                }
-            timerJob.cancel()
         }
     }
 

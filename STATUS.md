@@ -40,7 +40,7 @@
 - [x] 2026-11-06: arm64-v8a native library builds with installed NDK 27.2.12479018 and CMake 3.22.1.
 - [ ] Проверка MediaExtractor/MediaCodec на реальных MP3/M4A/AAC файлах на Android.
 - [x] 2026-11-06: UI orchestrator now decodes local audio and calls Whisper.cpp when the model is provisioned in app files.
-- [ ] Connect WorkManager to the real orchestrator and provision the model through a reproducible APK/install flow.
+- [x] 2026-11-07: WorkManager подключён к реальному `WhisperTranscriptionOrchestrator`; worker публикует progress/stage и сохраняет полный transcript через `TranscriptStore`, а ViewModel наблюдает состояние задачи и восстанавливает результат после завершения.
 - [ ] Выполнить WER/RTF на трёх предоставленных экспертами записях.
 - [ ] Instrumented/Compose tests на эмуляторе или телефоне.
 - [ ] Повторить обработку на Poco X7 с новым APK и собрать logcat по тегу `ProstoVoiceDiarization`; реальный runtime diarization пока не подтверждён.
@@ -51,6 +51,7 @@
 - [x] 2026-11-07: alignment теперь делит ASR-текст по diarization boundaries, если speaker меняется внутри одного Whisper-сегмента и в тексте достаточно слов; добавлен unit test для двух speaker внутри одной ASR-реплики.
 - [x] 2026-11-07: короткие gaps между diarization-сегментами (до 1 секунды) теперь заполняются ближайшим speaker; `UNKNOWN` сохраняется для более длинных неподтверждённых участков.
 - [x] 2026-11-07: кластеризация настроена на threshold `0.75`, `min_duration_on=0.4s`, `min_duration_off=0.3s`; default alignment smoothing увеличен до 1.2s. Unit tests и debug APK повторно собраны успешно. Новый APK ещё не установлен на телефон.
+- [x] 2026-11-07: WorkManager-пайплайн собран, unit-тесты и `assembleDebug` прошли; APK установлен на Poco X7, приложение запущено без FATAL EXCEPTION в проверенном фрагменте logcat. Полная фоновая обработка на устройстве ещё не подтверждена.
 
 ## Зафиксированные входы от команды и ТЗ
 

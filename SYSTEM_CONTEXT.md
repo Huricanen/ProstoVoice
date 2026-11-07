@@ -16,7 +16,7 @@ ProstoVoice — планируемое Android-приложение для ло�
 - `TranscriptionViewModel` связывает SAF-выбор файла с orchestration state, progress и error state.
 - `app/src/main/java/com/prostovoice/export/TranscriptExport.kt` содержит TXT serialization и JSON export с корневым `transcript`.
 - `WavPcmAudioDecoder` поддерживает потоковое чтение PCM 16-bit WAV mono/stereo, downmix и resampling в 16 kHz mono.
-- `TranscriptionWorker` и `TranscriptionWorkRequest` задают offline WorkManager boundary для длительной обработки при свёрнутом приложении; worker пока требует отдельного подключения real orchestrator.
+- `TranscriptionWorker` и `TranscriptionWorkRequest` задают offline WorkManager boundary для длительной обработки при свёрнутом приложении. Worker вызывает `WhisperTranscriptionOrchestrator`, публикует progress/stage и сохраняет полный результат через `TranscriptStore`; ViewModel наблюдает `WorkInfo`.
 - `tools/evaluate_transcript.py` сравнивает два hackathon JSON и вычисляет WER/RTF.
 
 ## Архитектура базового уровня
