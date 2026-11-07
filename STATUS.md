@@ -6,6 +6,7 @@
 
 - [x] 2026-11-07: добавлен ручной эталон speaker intervals и полного текста для записи `07.11.2026 13.40.m4a` в `evaluation/diarization/07.11.2026-13.40.reference.json`. Аудио в репозиторий не копировалось.
 - [ ] Runtime-прогон этого baseline на Android не выполнен: в текущей среде отсутствует `adb`; метрики DER/JER и сравнение с фактическими intervals ещё не рассчитаны.
+- [x] 2026-11-07: добавлен `tools/evaluate_diarization.py` с оптимальным сопоставлением speaker labels, DER и диагностикой missed/false-alarm/confusion; добавлены Python unit tests.
 
 ## Подтверждено
 
