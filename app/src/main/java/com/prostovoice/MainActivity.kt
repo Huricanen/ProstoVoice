@@ -24,11 +24,8 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -46,7 +43,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.Alignment
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import com.prostovoice.domain.Transcript
@@ -67,7 +63,6 @@ private fun ProstoVoiceApp() {
     val viewModel: TranscriptionViewModel = viewModel()
     val state by viewModel.state.collectAsState()
     var pendingExport by remember { mutableStateOf<String?>(null) }
-    var exportExpanded by remember { mutableStateOf(false) }
     var deviceProfile by remember { mutableStateOf<String?>(null) }
     val context = androidx.compose.ui.platform.LocalContext.current
     val notificationPermissionLauncher = rememberLauncherForActivityResult(RequestPermission()) { }
@@ -105,45 +100,36 @@ private fun ProstoVoiceApp() {
                         modifier = Modifier
                             .fillMaxWidth()
                             .navigationBarsPadding()
-                            .padding(horizontal = 16.dp)
-                            .background(Color.Transparent),
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(
-                                    when {
-                                        state.transcript == null -> 0.dp
-                                        exportExpanded -> 128.dp
-                                        else -> 80.dp
-                                    },
-                                )
-                                .background(Color.Transparent),
-                            contentAlignment = Alignment.BottomEnd,
-                        ) {
-                            Box(
-                                modifier = Modifier.padding(bottom = 12.dp),
-                            ) {
-                                state.transcript?.let { transcript ->
-                                    ExportActions(
-                                        expanded = exportExpanded,
-                                        onToggle = { exportExpanded = !exportExpanded },
-                                        onTxt = {
-                                            pendingExport = transcript.toTxt()
-                                            exportLauncher.launch("${transcript.sourceName}.txt")
-                                            exportExpanded = false
-                                        },
-                                        onJson = {
-                                            pendingExport = transcript.toJson()
-                                            jsonExportLauncher.launch("${transcript.sourceName}.json")
-                                            exportExpanded = false
-                                        },
-                                    )
-                                }
-                            }
-                        }
                         state.selectedUri?.let { uri ->
                             AudioPlayer(uri = uri, transcript = state.transcript)
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            val transcript = state.transcript
+                            Button(
+                                modifier = Modifier.weight(1f),
+                                enabled = transcript != null,
+                                onClick = {
+                                    transcript?.let {
+                                        pendingExport = it.toTxt()
+                                        exportLauncher.launch("${it.sourceName}.txt")
+                                    }
+                                },
+                            ) { Text("TXT") }
+                            Button(
+                                modifier = Modifier.weight(1f),
+                                enabled = transcript != null,
+                                onClick = {
+                                    transcript?.let {
+                                        pendingExport = it.toJson()
+                                        jsonExportLauncher.launch("${it.sourceName}.json")
+                                    }
+                                },
+                            ) { Text("JSON") }
                         }
                     }
                 },
@@ -337,22 +323,6 @@ private fun AudioPlayer(uri: android.net.Uri, transcript: Transcript?) {
             color = if (error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodySmall,
         )
-    }
-}
-
-@androidx.compose.runtime.Composable
-private fun ExportActions(
-    expanded: Boolean,
-    onToggle: () -> Unit,
-    onTxt: () -> Unit,
-    onJson: () -> Unit,
-) {
-    Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        if (expanded) {
-            SmallFloatingActionButton(onClick = onTxt) { Text(".txt") }
-            SmallFloatingActionButton(onClick = onJson) { Text(".json") }
-        }
-        FloatingActionButton(onClick = onToggle) { Text("↥") }
     }
 }
 
