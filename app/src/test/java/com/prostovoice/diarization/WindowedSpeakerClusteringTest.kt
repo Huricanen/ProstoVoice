@@ -5,6 +5,23 @@ import org.junit.Test
 
 class WindowedSpeakerClusteringTest {
     @Test
+    fun `estimates one speaker for similar embeddings`() {
+        val windows = (0 until 6).map { index ->
+            WindowEmbedding(index * 500L, index * 500L + 1500L, floatArrayOf(1f, index * 0.001f))
+        }
+        assertEquals(1, WindowedSpeakerClustering.estimateClusterCount(windows))
+    }
+
+    @Test
+    fun `estimates two speakers for separated embeddings`() {
+        val windows = (0 until 8).map { index ->
+            val vector = if (index < 4) floatArrayOf(1f, 0f) else floatArrayOf(0f, 1f)
+            WindowEmbedding(index * 500L, index * 500L + 1500L, vector)
+        }
+        assertEquals(2, WindowedSpeakerClustering.estimateClusterCount(windows))
+    }
+
+    @Test
     fun `clusters short windows and merges adjacent same speaker`() {
         val result = WindowedSpeakerClustering.cluster(
             listOf(

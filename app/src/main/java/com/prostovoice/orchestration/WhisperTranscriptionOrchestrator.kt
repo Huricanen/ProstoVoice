@@ -84,8 +84,9 @@ class WhisperTranscriptionOrchestrator(
                     ))
                 }
             }
-            val maxClusters = if (durationMs < 45_000L) 2 else 4
-            val windowedSegments = WindowedSpeakerClustering.cluster(windows, maxClusters)
+            val estimatedClusters = WindowedSpeakerClustering.estimateClusterCount(windows, maxClusters = 4)
+            Log.i(TAG, "Estimated $estimatedClusters speaker cluster(s) from ${windows.size} embedding windows")
+            val windowedSegments = WindowedSpeakerClustering.cluster(windows, estimatedClusters)
             if (windowedSegments.isNotEmpty()) {
                 windowedSegments
             } else {

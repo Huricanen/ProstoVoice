@@ -31,6 +31,7 @@
 - [x] 2026-11-07: APK с raw interval logging собран, unit tests прошли и APK повторно установлен на Poco X7.
 - [x] 2026-11-07: debug APK собран с Android SDK/NDK и установлен через ADB на устройство `GAJZYLDMOVV8B6RS`; `com.prostovoice/.MainActivity` подтверждена как resumed. APK SHA-256: `600BFD64BBCF8C897FE3BA58A2EACBF1844E0DD022F6A21E4C70C63BC109B59A`.
 - [x] 2026-11-07: последний фактический `last_transcript.json` для `07.11.2026 21.43.m4a` (21.93 s) ещё содержал 4 speaker labels и был получен до ограничения коротких записей. После этого `testDebugUnitTest` и `assembleDebug` прошли, APK SHA-256 `FFA73720149C6A4BEFFB5D8AF2D966A63D26E4F1B7AF616CD0901DF02EFA7792` установлен на Poco X7; повторная обработка записи ожидает проверки.
+- [x] 2026-11-07: фиксированное `k=2/4` заменено на выбор числа кластеров по silhouette score на уже извлечённых embeddings; добавлены тесты для одного и двух акустически разделённых speakers. `testDebugUnitTest` прошёл.
 - [x] 2026-11-07: `gradlew.bat test` повторно выполнен после добавления `DiarizationConfig`; debug/release unit tests прошли.
 
 ## Подтверждено
