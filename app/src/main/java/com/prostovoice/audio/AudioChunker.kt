@@ -45,16 +45,37 @@ object AudioChunker {
         val result = mutableListOf<AsrSegment>()
         for (segment in segments.sortedWith(compareBy<AsrSegment> { it.startMs }.thenBy { it.endMs })) {
             if (segment.text.isBlank() || segment.endMs <= segment.startMs) continue
-            val normalized = normalize(segment.text)
+            val cleanedText = removeNearbyRepeatedPhrase(segment.text)
+            val normalized = normalize(cleanedText)
             val duplicate = result.asReversed().takeWhile { segment.startMs - it.endMs <= 4_000L }
                 .any { previous ->
                     normalize(previous.text) == normalized &&
                         segment.startMs < previous.endMs && segment.endMs > previous.startMs
                 }
-            if (!duplicate) result += segment
+            if (!duplicate) result += segment.copy(text = cleanedText)
         }
         return result
     }
+
+    /** Removes a repeated 2-5 word phrase with at most four inserted words. */
+    private fun removeNearbyRepeatedPhrase(text: String): String {
+        val words = text.trim().split(Regex("\\s+")).filter(String::isNotBlank)
+        for (phraseSize in 5 downTo 2) {
+            for (first in 0..words.size - phraseSize) {
+                val secondStart = first + phraseSize + 1
+                val secondEnd = minOf(words.size - phraseSize, first + phraseSize + 4)
+                for (second in secondStart..secondEnd) {
+                    if (words.subList(first, first + phraseSize).equalsIgnoreCase(words.subList(second, second + phraseSize))) {
+                        return (words.subList(0, first + phraseSize) + words.subList(second + phraseSize, words.size)).joinToString(" ")
+                    }
+                }
+            }
+        }
+        return text.trim()
+    }
+
+    private fun List<String>.equalsIgnoreCase(other: List<String>): Boolean =
+        size == other.size && indices.all { this[it].equals(other[it], ignoreCase = true) }
 
     private fun normalize(text: String): String = text.trim().lowercase().replace(Regex("\\s+"), " ")
 }

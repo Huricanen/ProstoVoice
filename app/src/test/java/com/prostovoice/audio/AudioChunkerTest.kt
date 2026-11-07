@@ -31,4 +31,13 @@ class AudioChunkerTest {
 
         assertEquals(listOf("Привет всем", "Следующая фраза"), result.map { it.text })
     }
+
+    @Test
+    fun deduplicateAsrSegmentsRemovesRepeatedPhraseWithInsertedOverlapWords() {
+        val result = AudioChunker.deduplicateAsrSegments(
+            listOf(AsrSegment("Верно. Предложим ему за ему. предложим ему займы.", 55_000, 61_000)),
+        )
+
+        assertEquals("Верно. Предложим ему займы.", result.single().text)
+    }
 }
