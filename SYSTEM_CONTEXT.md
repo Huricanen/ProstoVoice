@@ -19,6 +19,7 @@ ProstoVoice — планируемое Android-приложение для ло�
 - `TranscriptionWorker` и `TranscriptionWorkRequest` задают offline WorkManager boundary для длительной обработки при свёрнутом приложении. Worker вызывает `WhisperTranscriptionOrchestrator`, публикует progress/stage и сохраняет полный результат через `TranscriptStore`; ViewModel наблюдает `WorkInfo`.
 - Worker использует foreground notification (`dataSync`) для защиты длительной CPU-обработки от обычных фоновых ограничений Android. `Transcript.processingTimeMs` сохраняется вместе с результатом и показывается в UI.
 - После завершения worker публикует отдельное auto-cancel уведомление об успехе или ошибке, поскольку foreground-уведомление удаляется системой вместе с завершением worker.
+- На Android 13+ UI запрашивает `POST_NOTIFICATIONS` и предоставляет прямой переход в системные настройки уведомлений приложения.
 - `tools/evaluate_transcript.py` сравнивает два hackathon JSON и вычисляет WER/RTF.
 
 ## Архитектура базового уровня

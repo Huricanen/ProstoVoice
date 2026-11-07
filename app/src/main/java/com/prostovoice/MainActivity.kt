@@ -1,5 +1,10 @@
 package com.prostovoice
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.content.Intent
+import android.provider.Settings
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.ComponentActivity
@@ -21,6 +26,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -28,6 +34,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import com.prostovoice.domain.Transcript
 import com.prostovoice.export.toJson
 import com.prostovoice.export.toTxt
@@ -47,6 +54,17 @@ private fun ProstoVoiceApp() {
     var pendingExport by remember { mutableStateOf<String?>(null) }
     var deviceProfile by remember { mutableStateOf<String?>(null) }
     val context = androidx.compose.ui.platform.LocalContext.current
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(RequestPermission()) { }
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            androidx.core.content.ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
     val picker = rememberLauncherForActivityResult(OpenDocument()) { uri ->
         uri?.let(viewModel::selectFile)
     }
@@ -78,6 +96,23 @@ private fun ProstoVoiceApp() {
                     onClick = { deviceProfile = com.prostovoice.nativebridge.NativePipeline.deviceProfile() },
                 ) { Text("Диагностика устройства") }
                 deviceProfile?.let { Text("Профиль: $it") }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                    androidx.core.content.ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.POST_NOTIFICATIONS,
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    Button(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            context.startActivity(
+                                Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                                    putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                },
+                            )
+                        },
+                    ) { Text("Включить уведомления") }
+                }
                 Button(
                     modifier = Modifier.fillMaxWidth(),
                     onClick = { picker.launch(arrayOf("audio/*")) },
