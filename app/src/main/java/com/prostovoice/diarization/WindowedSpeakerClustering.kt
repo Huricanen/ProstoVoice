@@ -43,6 +43,14 @@ object WindowedSpeakerClustering {
                 }
             }
         }
+        var switches = 0
+        for (index in 1 until assignments.size) {
+            if (assignments[index] != assignments[index - 1]) switches++
+        }
+        val switchRate = switches / assignments.size.coerceAtLeast(2).toFloat()
+        if (count > 1 && assignments.size >= 8 && switchRate > 0.12f) {
+            assignments.fill(0)
+        }
         val result = mutableListOf<SpeakerSegment>()
         windows.forEachIndexed { index, window ->
             val speaker = "speaker_${assignments[index] + 1}"

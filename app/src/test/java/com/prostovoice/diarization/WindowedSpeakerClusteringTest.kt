@@ -31,4 +31,18 @@ class WindowedSpeakerClusteringTest {
 
         assertEquals(listOf("speaker_1"), result.map { it.speaker }.distinct())
     }
+
+    @Test
+    fun `collapses unstable rapid cluster switching`() {
+        val result = WindowedSpeakerClustering.cluster(
+            (0 until 20).map { index ->
+                WindowEmbedding(index * 500L, index * 500L + 1500L,
+                    if (index % 2 == 0) floatArrayOf(1f, 0f) else floatArrayOf(0f, 1f))
+            },
+            requestedClusters = 4,
+            singleSpeakerMaxDistance = 0f,
+        )
+
+        assertEquals(listOf("speaker_1"), result.map { it.speaker }.distinct())
+    }
 }
