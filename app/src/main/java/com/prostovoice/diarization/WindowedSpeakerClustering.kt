@@ -30,25 +30,13 @@ object WindowedSpeakerClustering {
     fun cluster(
         windows: List<WindowEmbedding>,
         requestedClusters: Int,
-        singleSpeakerMaxDistance: Float = 0.50f,
-        temporalGuardMinDurationMs: Long = 45_000L,
     ): List<SpeakerSegment> {
         if (windows.isEmpty()) return emptyList()
         val dimensions = windows.first().values.size
         require(dimensions > 0 && windows.all { it.values.size == dimensions })
         val vectors = windows.map { normalize(it.values) }
-        val durationMs = windows.maxOf { it.endMs } - windows.minOf { it.startMs }
-        val global = normalize(FloatArray(dimensions).also { mean ->
-            vectors.forEach { vector -> vector.forEachIndexed { index, value -> mean[index] += value } }
-        })
-        val maxGlobalDistance = vectors.maxOf { 1f - cosine(it, global) }
-        val count = if (durationMs >= temporalGuardMinDurationMs &&
-            maxGlobalDistance <= singleSpeakerMaxDistance) {
-            1
-        } else {
-            requestedClusters.coerceIn(1, windows.size)
-        }
-        val centroids = MutableList(count) { vectors[it * vectors.size / count].copyOf() }
+        val count = requestedClusters.coerceIn(1, windows.size)
+        val centroids = initialCentroids(vectors, count)
         val assignments = IntArray(vectors.size)
         repeat(20) {
             vectors.forEachIndexed { index, vector ->
@@ -64,15 +52,6 @@ object WindowedSpeakerClustering {
                     centroids[cluster] = normalize(mean)
                 }
             }
-        }
-        var switches = 0
-        for (index in 1 until assignments.size) {
-            if (assignments[index] != assignments[index - 1]) switches++
-        }
-        val switchRate = switches / assignments.size.coerceAtLeast(2).toFloat()
-        if (count > 1 && durationMs >= temporalGuardMinDurationMs &&
-            assignments.size >= 8 && switchRate > 0.12f) {
-            assignments.fill(0)
         }
         val result = mutableListOf<SpeakerSegment>()
         windows.forEachIndexed { index, window ->
@@ -114,7 +93,7 @@ object WindowedSpeakerClustering {
 
     private fun kMeans(vectors: List<FloatArray>, count: Int): Pair<IntArray, List<FloatArray>> {
         val dimensions = vectors.first().size
-        val centroids = MutableList(count) { vectors[it * vectors.size / count].copyOf() }
+        val centroids = initialCentroids(vectors, count)
         val assignments = IntArray(vectors.size)
         repeat(20) {
             vectors.forEachIndexed { index, vector ->
@@ -132,5 +111,16 @@ object WindowedSpeakerClustering {
             }
         }
         return assignments.copyOf() to centroids
+    }
+
+    private fun initialCentroids(vectors: List<FloatArray>, count: Int): MutableList<FloatArray> {
+        val selected = mutableListOf(0)
+        while (selected.size < count) {
+            val next = vectors.indices.filterNot { it in selected }.maxBy { candidate ->
+                selected.minOf { 1f - cosine(vectors[candidate], vectors[it]) }
+            }
+            selected += next
+        }
+        return selected.map { vectors[it].copyOf() }.toMutableList()
     }
 }

@@ -36,32 +36,35 @@ class WindowedSpeakerClusteringTest {
     }
 
     @Test
-    fun `collapses similar windows into one speaker`() {
+    fun `estimator collapses similar windows into one speaker`() {
         val result = WindowedSpeakerClustering.cluster(
             listOf(
                 WindowEmbedding(0, 1500, floatArrayOf(1f, 0f)),
                 WindowEmbedding(500, 2000, floatArrayOf(0.99f, 0.01f)),
                 WindowEmbedding(1000, 2500, floatArrayOf(0.98f, 0.02f)),
             ),
-            requestedClusters = 4,
-            temporalGuardMinDurationMs = 0L,
+            requestedClusters = WindowedSpeakerClustering.estimateClusterCount(
+                listOf(
+                    WindowEmbedding(0, 1500, floatArrayOf(1f, 0f)),
+                    WindowEmbedding(500, 2000, floatArrayOf(0.99f, 0.01f)),
+                    WindowEmbedding(1000, 2500, floatArrayOf(0.98f, 0.02f)),
+                ),
+            ),
         )
 
         assertEquals(listOf("speaker_1"), result.map { it.speaker }.distinct())
     }
 
     @Test
-    fun `collapses unstable rapid cluster switching`() {
+    fun `preserves rapid switching when embeddings are separated`() {
         val result = WindowedSpeakerClustering.cluster(
             (0 until 20).map { index ->
                 WindowEmbedding(index * 500L, index * 500L + 1500L,
                     if (index % 2 == 0) floatArrayOf(1f, 0f) else floatArrayOf(0f, 1f))
             },
-            requestedClusters = 4,
-            singleSpeakerMaxDistance = 0f,
-            temporalGuardMinDurationMs = 5_000L,
+            requestedClusters = 2,
         )
 
-        assertEquals(listOf("speaker_1"), result.map { it.speaker }.distinct())
+        assertEquals(listOf("speaker_1", "speaker_2"), result.map { it.speaker }.distinct())
     }
 }
