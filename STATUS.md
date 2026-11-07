@@ -52,6 +52,7 @@
 - [x] 2026-11-07: короткие gaps между diarization-сегментами (до 1 секунды) теперь заполняются ближайшим speaker; `UNKNOWN` сохраняется для более длинных неподтверждённых участков.
 - [x] 2026-11-07: кластеризация настроена на threshold `0.75`, `min_duration_on=0.4s`, `min_duration_off=0.3s`; default alignment smoothing увеличен до 1.2s. Unit tests и debug APK повторно собраны успешно. Новый APK ещё не установлен на телефон.
 - [x] 2026-11-07: WorkManager-пайплайн собран, unit-тесты и `assembleDebug` прошли; APK установлен на Poco X7, приложение запущено без FATAL EXCEPTION в проверенном фрагменте logcat. Полная фоновая обработка на устройстве ещё не подтверждена.
+- [x] 2026-11-07: Worker переведён в foreground-режим с notification channel и `dataSync` service type; итоговое время обработки сохраняется в `last_transcript.json` и отображается рядом с результатом. `testDebugUnitTest`/`assembleDebug` прошли, APK повторно установлен и запущен на Poco X7.
 
 ## Зафиксированные входы от команды и ТЗ
 

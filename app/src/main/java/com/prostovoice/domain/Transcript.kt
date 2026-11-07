@@ -14,6 +14,7 @@ data class Transcript(
     val durationMs: Long,
     val language: String? = null,
     val segments: List<TranscriptSegment> = emptyList(),
+    val processingTimeMs: Long = 0L,
 )
 
 data class AsrSegment(

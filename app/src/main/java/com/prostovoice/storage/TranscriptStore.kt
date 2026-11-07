@@ -32,6 +32,7 @@ class TranscriptStore(context: Context) {
     private fun encode(transcript: Transcript): String = JSONObject().apply {
         put("source_name", transcript.sourceName)
         put("duration_ms", transcript.durationMs)
+        put("processing_time_ms", transcript.processingTimeMs)
         transcript.language?.let { put("language", it) }
         put("transcript", JSONArray().apply {
             transcript.segments.forEach { segment ->
@@ -64,6 +65,7 @@ class TranscriptStore(context: Context) {
             durationMs = root.optLong("duration_ms"),
             language = root.optString("language").takeIf { it.isNotBlank() },
             segments = segments,
+            processingTimeMs = root.optLong("processing_time_ms"),
         )
     }
 

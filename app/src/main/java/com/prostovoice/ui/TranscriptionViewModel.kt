@@ -40,7 +40,10 @@ class TranscriptionViewModel(application: Application) : AndroidViewModel(applic
 
     init {
         transcriptStore.load()?.let { transcript ->
-            mutableState.value = TranscriptionUiState(transcript = transcript)
+            mutableState.value = TranscriptionUiState(
+                transcript = transcript,
+                elapsedMs = transcript.processingTimeMs,
+            )
         }
     }
 
@@ -92,6 +95,7 @@ class TranscriptionViewModel(application: Application) : AndroidViewModel(applic
                             isProcessing = false,
                             progress = 1f,
                             processingStage = "Готово",
+                            elapsedMs = info.outputData.getLong(TranscriptionWorker.KEY_ELAPSED_MS, state.value.elapsedMs),
                             transcript = transcript,
                         )
                         timerJob.cancel()

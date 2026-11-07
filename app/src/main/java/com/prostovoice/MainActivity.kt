@@ -135,6 +135,7 @@ private fun TranscriptResult(
     onJson: () -> Unit,
 ) {
     Text("Результат: ${transcript.segments.size} реплик")
+    Text("Время обработки: ${formatElapsed(transcript.processingTimeMs)}")
     transcript.segments.forEach { segment ->
         Text("${segment.speaker} [${segment.startMs}–${segment.endMs}]\n${segment.text}")
     }
