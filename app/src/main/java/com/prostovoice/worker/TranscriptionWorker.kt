@@ -60,6 +60,11 @@ class TranscriptionWorker(
                     val completed = transcript.copy(processingTimeMs = elapsedMs)
                     TranscriptStore(applicationContext).save(completed)
                     setProgress(workDataOf(KEY_PROGRESS to 100))
+                    showCompletionNotification(
+                        title = "Расшифровка завершена",
+                        message = "Обработка заняла ${formatElapsed(elapsedMs)}",
+                        icon = android.R.drawable.stat_sys_download_done,
+                    )
                     Result.success(
                         workDataOf(
                             KEY_SOURCE_NAME to completed.sourceName,
@@ -71,12 +76,45 @@ class TranscriptionWorker(
                     )
                 },
                 onFailure = { error ->
+                    val elapsedMs = android.os.SystemClock.elapsedRealtime() - startedAt
+                    showCompletionNotification(
+                        title = "Ошибка расшифровки",
+                        message = "${error.message ?: "Не удалось обработать аудио"} · ${formatElapsed(elapsedMs)}",
+                        icon = android.R.drawable.stat_notify_error,
+                    )
                     Result.failure(errorData(error.message ?: "Ошибка обработки аудио"))
                 },
             )
     }
 
     private fun errorData(message: String): Data = workDataOf(KEY_ERROR to message)
+
+    private fun showCompletionNotification(title: String, message: String, icon: Int) {
+        val manager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            manager.createNotificationChannel(
+                NotificationChannel(
+                    COMPLETION_CHANNEL_ID,
+                    "Результаты обработки",
+                    NotificationManager.IMPORTANCE_DEFAULT,
+                ),
+            )
+        }
+        manager.notify(
+            COMPLETION_NOTIFICATION_ID,
+            NotificationCompat.Builder(applicationContext, COMPLETION_CHANNEL_ID)
+                .setSmallIcon(icon)
+                .setContentTitle(title)
+                .setContentText(message)
+                .setAutoCancel(true)
+                .build(),
+        )
+    }
+
+    private fun formatElapsed(milliseconds: Long): String {
+        val totalSeconds = milliseconds.coerceAtLeast(0L) / 1_000L
+        return "%02d:%02d".format(totalSeconds / 60L, totalSeconds % 60L)
+    }
 
     private fun createForegroundInfo(progress: Int, stage: String): ForegroundInfo {
         val manager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -112,5 +150,7 @@ class TranscriptionWorker(
         const val KEY_FALLBACK = "fallback"
         private const val CHANNEL_ID = "transcription"
         private const val NOTIFICATION_ID = 1001
+        private const val COMPLETION_CHANNEL_ID = "transcription_status"
+        private const val COMPLETION_NOTIFICATION_ID = 1002
     }
 }
