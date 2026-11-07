@@ -8,6 +8,9 @@
 - [ ] Runtime-прогон этого baseline на Android не выполнен: в текущей среде отсутствует `adb`; метрики DER/JER и сравнение с фактическими intervals ещё не рассчитаны.
 - [x] 2026-11-07: добавлен `tools/evaluate_diarization.py` с оптимальным сопоставлением speaker labels, DER и диагностикой missed/false-alarm/confusion; добавлены Python unit tests.
 - [x] 2026-11-07: native diarization parameters вынесены в `DiarizationConfig` (число кластеров, threshold и min-duration), добавлены проверки диапазонов; default profile сохранён прежним.
+- [ ] 2026-11-07: для следующего device-прогона выбран экспериментальный `windowShiftRatio=0.05` с raw interval logging; влияние на DER ещё не подтверждено.
+- [x] 2026-11-07: первый device baseline извлечён с Poco X7: 4 speakers, 14 raw-сегментов; interval evaluator дал `DER=0.1981` (missed `0.00s`, false alarm `4.68s`, confusion `8.59s`). Основная ошибка — пропущенные/сдвинутые границы turn.
+- [x] 2026-11-07: APK с экспериментальным `windowShiftRatio=0.05` и raw interval logging собран, unit tests прошли и APK повторно установлен на Poco X7; повторная обработка записи ещё не выполнена.
 - [x] 2026-11-07: debug APK собран с Android SDK/NDK и установлен через ADB на устройство `GAJZYLDMOVV8B6RS`; `com.prostovoice/.MainActivity` подтверждена как resumed. APK SHA-256: `600BFD64BBCF8C897FE3BA58A2EACBF1844E0DD022F6A21E4C70C63BC109B59A`.
 - [x] 2026-11-07: `gradlew.bat test` повторно выполнен после добавления `DiarizationConfig`; debug/release unit tests прошли.
 

@@ -9,6 +9,7 @@ class DiarizationConfigTest {
         val config = DiarizationConfig()
         assertEquals(0, config.numClusters)
         assertEquals(0.75f, config.threshold)
+        assertEquals(0.05f, config.windowShiftRatio)
         assertEquals(0.4f, config.minDurationOnSeconds)
         assertEquals(0.3f, config.minDurationOffSeconds)
     }
@@ -21,5 +22,10 @@ class DiarizationConfigTest {
     @Test(expected = IllegalArgumentException::class)
     fun `rejects threshold outside cosine distance range`() {
         DiarizationConfig(threshold = 2.1f)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `rejects invalid segmentation window shift`() {
+        DiarizationConfig(windowShiftRatio = 0f)
     }
 }

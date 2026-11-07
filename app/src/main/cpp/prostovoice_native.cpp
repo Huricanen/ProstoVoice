@@ -112,6 +112,7 @@ Java_com_prostovoice_nativebridge_NativePipeline_nativeDiarizePcm(
         jstring embedding_model_path,
         jint num_clusters,
         jfloat clustering_threshold,
+        jfloat window_shift_ratio,
         jfloat min_duration_on,
         jfloat min_duration_off) {
     if (pcm == nullptr || env->GetArrayLength(pcm) == 0) {
@@ -133,7 +134,7 @@ Java_com_prostovoice_nativebridge_NativePipeline_nativeDiarizePcm(
     const char* embedding_model = env->GetStringUTFChars(embedding_model_path, nullptr);
     SherpaOnnxOfflineSpeakerDiarizationConfig config{};
     config.segmentation.pyannote.model = segmentation_model;
-    config.segmentation.pyannote.window_shift_ratio = 0.1f;
+    config.segmentation.pyannote.window_shift_ratio = window_shift_ratio;
     config.segmentation.num_threads = 2;
     config.segmentation.provider = "cpu";
     config.embedding.model = embedding_model;
@@ -145,9 +146,9 @@ Java_com_prostovoice_nativebridge_NativePipeline_nativeDiarizePcm(
     config.min_duration_on = min_duration_on;
     config.min_duration_off = min_duration_off;
     __android_log_print(ANDROID_LOG_INFO, "ProstoVoiceDiarization",
-                        "Creating diarizer: samples=%d duration_ms=%d clusters=%d threshold=%.3f on=%.3f off=%.3f segmentation=%s embedding=%s",
+                        "Creating diarizer: samples=%d duration_ms=%d clusters=%d threshold=%.3f shift=%.3f on=%.3f off=%.3f segmentation=%s embedding=%s",
                         sample_count, static_cast<int>(sample_count * 1000LL / sample_rate),
-                        num_clusters, clustering_threshold, min_duration_on, min_duration_off,
+                        num_clusters, clustering_threshold, window_shift_ratio, min_duration_on, min_duration_off,
                         segmentation_model, embedding_model);
     const SherpaOnnxOfflineSpeakerDiarization* diarizer = nullptr;
     try {
@@ -194,6 +195,10 @@ Java_com_prostovoice_nativebridge_NativePipeline_nativeDiarizePcm(
     const auto* segments = SherpaOnnxOfflineSpeakerDiarizationResultSortByStartTime(result);
     std::string json = "{\"status\":\"ok\",\"engine\":\"sherpa-onnx\",\"segments\":[";
     for (int i = 0; i < count; ++i) {
+        __android_log_print(ANDROID_LOG_INFO, "ProstoVoiceDiarization",
+                            "Raw segment %d: start_ms=%d end_ms=%d speaker=%d",
+                            i, static_cast<int>(segments[i].start * 1000),
+                            static_cast<int>(segments[i].end * 1000), segments[i].speaker + 1);
         if (i > 0) json += ',';
         json += "{\"start_ms\":" + std::to_string(static_cast<int>(segments[i].start * 1000)) +
                 ",\"end_ms\":" + std::to_string(static_cast<int>(segments[i].end * 1000)) +

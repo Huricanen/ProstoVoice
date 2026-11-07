@@ -58,6 +58,7 @@ object NativePipeline {
                 embeddingModelPath,
                 config.numClusters,
                 config.threshold,
+                config.windowShiftRatio,
                 config.minDurationOnSeconds,
                 config.minDurationOffSeconds,
             )
@@ -84,6 +85,7 @@ object NativePipeline {
         embeddingModelPath: String,
         numClusters: Int,
         threshold: Float,
+        windowShiftRatio: Float,
         minDurationOnSeconds: Float,
         minDurationOffSeconds: Float,
     ): String
