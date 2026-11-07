@@ -109,7 +109,11 @@ Java_com_prostovoice_nativebridge_NativePipeline_nativeDiarizePcm(
         jfloatArray pcm,
         jint sample_rate,
         jstring segmentation_model_path,
-        jstring embedding_model_path) {
+        jstring embedding_model_path,
+        jint num_clusters,
+        jfloat clustering_threshold,
+        jfloat min_duration_on,
+        jfloat min_duration_off) {
     if (pcm == nullptr || env->GetArrayLength(pcm) == 0) {
         return ToString(env, "{\"status\":\"invalid_input\",\"engine\":\"sherpa-onnx\"}");
     }
@@ -135,15 +139,15 @@ Java_com_prostovoice_nativebridge_NativePipeline_nativeDiarizePcm(
     config.embedding.model = embedding_model;
     config.embedding.num_threads = 2;
     config.embedding.provider = "cpu";
-    config.clustering.num_clusters = 0;
-    // Larger FastClustering distance thresholds produce fewer clusters.
-    config.clustering.threshold = 0.75f;
+    config.clustering.num_clusters = num_clusters;
+    config.clustering.threshold = clustering_threshold;
     config.clustering.compute_confidence = 1;
-    config.min_duration_on = 0.4f;
-    config.min_duration_off = 0.3f;
+    config.min_duration_on = min_duration_on;
+    config.min_duration_off = min_duration_off;
     __android_log_print(ANDROID_LOG_INFO, "ProstoVoiceDiarization",
-                        "Creating diarizer: samples=%d duration_ms=%d segmentation=%s embedding=%s",
+                        "Creating diarizer: samples=%d duration_ms=%d clusters=%d threshold=%.3f on=%.3f off=%.3f segmentation=%s embedding=%s",
                         sample_count, static_cast<int>(sample_count * 1000LL / sample_rate),
+                        num_clusters, clustering_threshold, min_duration_on, min_duration_off,
                         segmentation_model, embedding_model);
     const SherpaOnnxOfflineSpeakerDiarization* diarizer = nullptr;
     try {

@@ -1,5 +1,7 @@
 package com.prostovoice.nativebridge
 
+import com.prostovoice.diarization.DiarizationConfig
+
 /**
  * Stable Kotlin boundary for the Whisper.cpp and sherpa-onnx adapters.
  *
@@ -42,13 +44,23 @@ object NativePipeline {
         sampleRate: Int,
         segmentationModelPath: String,
         embeddingModelPath: String,
+        config: DiarizationConfig = DiarizationConfig(),
     ): String {
         require(sampleRate > 0) { "sampleRate must be positive" }
         require(segmentationModelPath.isNotBlank()) { "segmentationModelPath must not be blank" }
         require(embeddingModelPath.isNotBlank()) { "embeddingModelPath must not be blank" }
         require(pcm.isNotEmpty()) { "pcm must not be empty" }
         return checkAvailable {
-        nativeDiarizePcm(pcm, sampleRate, segmentationModelPath, embeddingModelPath)
+            nativeDiarizePcm(
+                pcm,
+                sampleRate,
+                segmentationModelPath,
+                embeddingModelPath,
+                config.numClusters,
+                config.threshold,
+                config.minDurationOnSeconds,
+                config.minDurationOffSeconds,
+            )
         }
     }
 
@@ -70,5 +82,9 @@ object NativePipeline {
         sampleRate: Int,
         segmentationModelPath: String,
         embeddingModelPath: String,
+        numClusters: Int,
+        threshold: Float,
+        minDurationOnSeconds: Float,
+        minDurationOffSeconds: Float,
     ): String
 }
