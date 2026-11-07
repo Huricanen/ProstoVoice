@@ -17,4 +17,18 @@ class WindowedSpeakerClusteringTest {
         assertEquals(listOf("speaker_1", "speaker_2"), result.map { it.speaker })
         assertEquals(2000L, result.last().startMs)
     }
+
+    @Test
+    fun `collapses similar windows into one speaker`() {
+        val result = WindowedSpeakerClustering.cluster(
+            listOf(
+                WindowEmbedding(0, 1500, floatArrayOf(1f, 0f)),
+                WindowEmbedding(500, 2000, floatArrayOf(0.99f, 0.01f)),
+                WindowEmbedding(1000, 2500, floatArrayOf(0.98f, 0.02f)),
+            ),
+            requestedClusters = 4,
+        )
+
+        assertEquals(listOf("speaker_1"), result.map { it.speaker }.distinct())
+    }
 }

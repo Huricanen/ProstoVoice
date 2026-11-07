@@ -8,12 +8,24 @@ data class WindowEmbedding(val startMs: Long, val endMs: Long, val values: Float
 
 /** Cosine k-means for short overlapping speaker windows. */
 object WindowedSpeakerClustering {
-    fun cluster(windows: List<WindowEmbedding>, requestedClusters: Int): List<SpeakerSegment> {
+    fun cluster(
+        windows: List<WindowEmbedding>,
+        requestedClusters: Int,
+        singleSpeakerMaxDistance: Float = 0.20f,
+    ): List<SpeakerSegment> {
         if (windows.isEmpty()) return emptyList()
         val dimensions = windows.first().values.size
         require(dimensions > 0 && windows.all { it.values.size == dimensions })
-        val count = requestedClusters.coerceIn(1, windows.size)
         val vectors = windows.map { normalize(it.values) }
+        val global = normalize(FloatArray(dimensions).also { mean ->
+            vectors.forEach { vector -> vector.forEachIndexed { index, value -> mean[index] += value } }
+        })
+        val maxGlobalDistance = vectors.maxOf { 1f - cosine(it, global) }
+        val count = if (maxGlobalDistance <= singleSpeakerMaxDistance) {
+            1
+        } else {
+            requestedClusters.coerceIn(1, windows.size)
+        }
         val centroids = MutableList(count) { vectors[it * vectors.size / count].copyOf() }
         val assignments = IntArray(vectors.size)
         repeat(20) {

@@ -20,6 +20,7 @@
 - [x] 2026-11-07: оконный embedding path проверен на Poco X7 на `07.11.2026 13.40.m4a`: 4 speakers, `DER=0.1057`, missed `0.00s`, false alarm `4.68s`, confusion `2.40s`. Это лучше baseline ERes2Net offline diarizer (`DER=0.1981`, confusion `8.59s`).
 - [ ] 2026-11-07: найден частичный ASR overlap-дубликат (`Предложим ему ... предложим ему`); добавлена локальная нормализация и unit test, device-проверка после нового APK ещё не выполнена.
 - [x] 2026-11-07: после установки APK device-прогон подтвердил удаление частичного overlap-дубликата; проблемный фрагмент теперь выводится один раз. Отдельные ошибки распознавания слов остаются задачей Whisper.
+- [ ] 2026-11-07: обнаружен дефект оконного k-means: фиксированное `k=4` разбило одноголосую запись на 4 speakers; добавлено автоматическое схлопывание похожих embeddings в один кластер, device-проверка ещё не выполнена.
 - [x] 2026-11-07: первый device baseline извлечён с Poco X7: 4 speakers, 14 raw-сегментов; interval evaluator дал `DER=0.1981` (missed `0.00s`, false alarm `4.68s`, confusion `8.59s`). Основная ошибка — пропущенные/сдвинутые границы turn.
 - [x] 2026-11-07: APK с raw interval logging собран, unit tests прошли и APK повторно установлен на Poco X7.
 - [x] 2026-11-07: debug APK собран с Android SDK/NDK и установлен через ADB на устройство `GAJZYLDMOVV8B6RS`; `com.prostovoice/.MainActivity` подтверждена как resumed. APK SHA-256: `600BFD64BBCF8C897FE3BA58A2EACBF1844E0DD022F6A21E4C70C63BC109B59A`.
