@@ -40,6 +40,7 @@ class TranscriptionWorker(
             ?: return@withContext Result.failure(errorData("Не указан URI аудиофайла"))
         val uri = runCatching { Uri.parse(uriString) }.getOrNull()
             ?: return@withContext Result.failure(errorData("Некорректный URI аудиофайла"))
+        val forcedSpeakerCount = inputData.getInt(KEY_FORCED_SPEAKER_COUNT, 0).takeIf { it > 0 }
 
         setForeground(createForegroundInfo(0, "Подготовка"))
         setProgress(workDataOf(KEY_PROGRESS to 0, KEY_STAGE to "Подготовка"))
@@ -59,7 +60,7 @@ class TranscriptionWorker(
             }
         }
         val transcription = runCatching {
-            WhisperTranscriptionOrchestrator(applicationContext).transcribe(uri) { progress, stage ->
+            WhisperTranscriptionOrchestrator(applicationContext).transcribe(uri, forcedSpeakerCount) { progress, stage ->
                 progressState.set(
                     ProgressState((progress * 100f).toInt().coerceIn(0, 100), stage),
                 )
@@ -154,6 +155,7 @@ class TranscriptionWorker(
 
     companion object {
         const val KEY_AUDIO_URI = "audio_uri"
+        const val KEY_FORCED_SPEAKER_COUNT = "forced_speaker_count"
         const val KEY_PROGRESS = "progress"
         const val KEY_STAGE = "stage"
         const val KEY_ERROR = "error"

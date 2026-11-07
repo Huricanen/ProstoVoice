@@ -52,6 +52,14 @@ class TranscriptionViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun transcribe() {
+        transcribe(forcedSpeakerCount = null)
+    }
+
+    fun transcribeSingleSpeaker() {
+        transcribe(forcedSpeakerCount = 1)
+    }
+
+    private fun transcribe(forcedSpeakerCount: Int?) {
         val uri = state.value.selectedUri ?: return
         if (state.value.isProcessing) return
         observationJob?.cancel()
@@ -70,7 +78,7 @@ class TranscriptionViewModel(application: Application) : AndroidViewModel(applic
                     delay(250L)
                 }
             }
-            val request = TranscriptionWorkRequest.create(uri)
+            val request = TranscriptionWorkRequest.create(uri, forcedSpeakerCount)
             workManager.enqueueUniqueWork(
                 TranscriptionWorkRequest.UNIQUE_NAME,
                 ExistingWorkPolicy.REPLACE,

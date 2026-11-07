@@ -126,7 +126,14 @@ private fun ProstoVoiceApp() {
                         enabled = !state.isProcessing,
                         onClick = viewModel::transcribe,
                     ) {
-                        Text("Запустить расшифровку")
+                        Text("Автоматически определить голоса")
+                    }
+                    Button(
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !state.isProcessing,
+                        onClick = viewModel::transcribeSingleSpeaker,
+                    ) {
+                        Text("Обработать как один голос")
                     }
                 }
                 if (state.isProcessing) {

@@ -22,10 +22,18 @@ class WhisperTranscriptionOrchestrator(
     private val modelFileName: String = DEFAULT_MODEL_FILE,
 ) : TranscriptionOrchestrator {
     override suspend fun transcribe(uri: Uri): Transcript {
-        return transcribe(uri) { _, _ -> }
+        return transcribe(uri, null) { _, _ -> }
     }
 
     suspend fun transcribe(uri: Uri, onProgress: (Float, String) -> Unit): Transcript {
+        return transcribe(uri, null, onProgress)
+    }
+
+    suspend fun transcribe(
+        uri: Uri,
+        forcedSpeakerCount: Int?,
+        onProgress: (Float, String) -> Unit,
+    ): Transcript {
         check(NativePipeline.isAvailable) { "Native Whisper backend недоступен" }
         onProgress(0.02f, "Подготовка модели")
         val model = runCatching { WhisperModelStore(context, modelFileName).ensureModel() }
@@ -68,43 +76,47 @@ class WhisperTranscriptionOrchestrator(
         val durationMs = samples.size * 1_000L / 16_000L
         val speakerSegments: List<SpeakerSegment> = runCatching {
             onProgress(0.80f, "Разделение по говорящим")
-            val embedding = WhisperModelStore(context, EMBEDDING_MODEL).ensureModel()
-            val windowed = JSONObject(
-                NativePipeline.extractWindowEmbeddings(samples, 16_000, embedding.absolutePath),
-            )
-            check(windowed.optString("status") == "ok")
-            val windows = buildList {
-                val items = windowed.optJSONArray("windows") ?: return@buildList
-                for (index in 0 until items.length()) {
-                    val item = items.getJSONObject(index)
-                    val values = item.optJSONArray("values") ?: continue
-                    add(WindowEmbedding(
-                        item.optLong("start_ms"), item.optLong("end_ms"),
-                        FloatArray(values.length()) { values.optDouble(it).toFloat() },
-                    ))
-                }
-            }
-            val estimatedClusters = WindowedSpeakerClustering.estimateClusterCount(windows, maxClusters = 4)
-            Log.i(TAG, "Estimated $estimatedClusters speaker cluster(s) from ${windows.size} embedding windows")
-            val windowedSegments = WindowedSpeakerClustering.cluster(windows, estimatedClusters)
-            if (windowedSegments.isNotEmpty()) {
-                windowedSegments
+            if (forcedSpeakerCount == 1) {
+                listOf(SpeakerSegment("speaker_1", 0L, durationMs))
             } else {
-                val segmentation = WhisperModelStore(context, SEGMENTATION_MODEL).ensureModel()
-                val diarization = JSONObject(
-                    NativePipeline.diarizePcm(samples, 16_000, segmentation.absolutePath, embedding.absolutePath),
+                val embedding = WhisperModelStore(context, EMBEDDING_MODEL).ensureModel()
+                val windowed = JSONObject(
+                    NativePipeline.extractWindowEmbeddings(samples, 16_000, embedding.absolutePath),
                 )
-                check(diarization.optString("status") == "ok")
-                val rawSegments = buildList {
-                    val segments = diarization.optJSONArray("segments") ?: return@buildList
-                    for (index in 0 until segments.length()) {
-                        val item = segments.getJSONObject(index)
-                        add(SpeakerSegment(
-                            item.optString("speaker"), item.optLong("start_ms"), item.optLong("end_ms"),
+                check(windowed.optString("status") == "ok")
+                val windows = buildList {
+                    val items = windowed.optJSONArray("windows") ?: return@buildList
+                    for (index in 0 until items.length()) {
+                        val item = items.getJSONObject(index)
+                        val values = item.optJSONArray("values") ?: continue
+                        add(WindowEmbedding(
+                            item.optLong("start_ms"), item.optLong("end_ms"),
+                            FloatArray(values.length()) { values.optDouble(it).toFloat() },
                         ))
                     }
                 }
-                TranscriptAligner.normalizeSpeakerLabels(rawSegments)
+                val estimatedClusters = WindowedSpeakerClustering.estimateClusterCount(windows, maxClusters = 4)
+                Log.i(TAG, "Estimated $estimatedClusters speaker cluster(s) from ${windows.size} embedding windows")
+                val windowedSegments = WindowedSpeakerClustering.cluster(windows, estimatedClusters)
+                if (windowedSegments.isNotEmpty()) {
+                    windowedSegments
+                } else {
+                    val segmentation = WhisperModelStore(context, SEGMENTATION_MODEL).ensureModel()
+                    val diarization = JSONObject(
+                        NativePipeline.diarizePcm(samples, 16_000, segmentation.absolutePath, embedding.absolutePath),
+                    )
+                    check(diarization.optString("status") == "ok")
+                    val rawSegments = buildList {
+                        val segments = diarization.optJSONArray("segments") ?: return@buildList
+                        for (index in 0 until segments.length()) {
+                            val item = segments.getJSONObject(index)
+                            add(SpeakerSegment(
+                                item.optString("speaker"), item.optLong("start_ms"), item.optLong("end_ms"),
+                            ))
+                        }
+                    }
+                    TranscriptAligner.normalizeSpeakerLabels(rawSegments)
+                }
             }
         }.getOrElse { error ->
             Log.w(TAG, "Diarization unavailable; using UNKNOWN speakers", error)
