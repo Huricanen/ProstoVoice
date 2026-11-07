@@ -20,11 +20,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
@@ -105,24 +105,32 @@ private fun ProstoVoiceApp() {
                         modifier = Modifier
                             .fillMaxWidth()
                             .navigationBarsPadding()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        horizontalAlignment = Alignment.End,
+                            .padding(horizontal = 16.dp)
+                            .background(Color.Transparent),
                     ) {
-                        state.transcript?.let { transcript ->
-                            ExportActions(
-                                expanded = exportExpanded,
-                                onToggle = { exportExpanded = !exportExpanded },
-                                onTxt = {
-                                    pendingExport = transcript.toTxt()
-                                    exportLauncher.launch("${transcript.sourceName}.txt")
-                                    exportExpanded = false
-                                },
-                                onJson = {
-                                    pendingExport = transcript.toJson()
-                                    jsonExportLauncher.launch("${transcript.sourceName}.json")
-                                    exportExpanded = false
-                                },
-                            )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(if (state.transcript == null) 0.dp else 64.dp)
+                                .background(Color.Transparent),
+                            contentAlignment = Alignment.BottomEnd,
+                        ) {
+                            state.transcript?.let { transcript ->
+                                ExportActions(
+                                    expanded = exportExpanded,
+                                    onToggle = { exportExpanded = !exportExpanded },
+                                    onTxt = {
+                                        pendingExport = transcript.toTxt()
+                                        exportLauncher.launch("${transcript.sourceName}.txt")
+                                        exportExpanded = false
+                                    },
+                                    onJson = {
+                                        pendingExport = transcript.toJson()
+                                        jsonExportLauncher.launch("${transcript.sourceName}.json")
+                                        exportExpanded = false
+                                    },
+                                )
+                            }
                         }
                         state.selectedUri?.let { uri ->
                             AudioPlayer(uri = uri, transcript = state.transcript)
@@ -335,7 +343,6 @@ private fun ExportActions(
             SmallFloatingActionButton(onClick = onJson) { Text(".json") }
         }
         FloatingActionButton(onClick = onToggle) { Text("↥") }
-        Spacer(modifier = Modifier.height(4.dp))
     }
 }
 
