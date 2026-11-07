@@ -12,6 +12,8 @@
 - [ ] 2026-11-07: для следующего device-прогона выбран фиксированный `numClusters=4` при `windowShiftRatio=0.1`; влияние на DER ещё не подтверждено.
 - [x] 2026-11-07: прогон `numClusters=4`, `threshold=0.75` дал 3 фактических speakers и `DER=0.2997`; фиксированное число кластеров не разделило смешанные голоса.
 - [ ] 2026-11-07: для следующего device-прогона выбран `numClusters=4`, `threshold=0.5`, `windowShiftRatio=0.1`.
+- [x] 2026-11-07: threshold `0.5` не изменил raw intervals: остались 3 speakers и те же 13 сегментов; проблема не объясняется clustering threshold.
+- [ ] 2026-11-07: следующий device-прогон переключён на локальную WeSpeaker ResNet34 embedding-модель при `numClusters=4`.
 - [x] 2026-11-07: первый device baseline извлечён с Poco X7: 4 speakers, 14 raw-сегментов; interval evaluator дал `DER=0.1981` (missed `0.00s`, false alarm `4.68s`, confusion `8.59s`). Основная ошибка — пропущенные/сдвинутые границы turn.
 - [x] 2026-11-07: APK с raw interval logging собран, unit tests прошли и APK повторно установлен на Poco X7.
 - [x] 2026-11-07: debug APK собран с Android SDK/NDK и установлен через ADB на устройство `GAJZYLDMOVV8B6RS`; `com.prostovoice/.MainActivity` подтверждена как resumed. APK SHA-256: `600BFD64BBCF8C897FE3BA58A2EACBF1844E0DD022F6A21E4C70C63BC109B59A`.
