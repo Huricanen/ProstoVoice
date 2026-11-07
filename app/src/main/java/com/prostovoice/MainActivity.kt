@@ -272,12 +272,12 @@ private fun AudioPlayer(uri: android.net.Uri, transcript: Transcript?) {
             )
             Canvas(modifier = Modifier.fillMaxWidth().height(30.dp)) {
                 if (durationMs > 0L) {
-                    transcript?.segments?.forEachIndexed { index, segment ->
+                    transcript?.segments?.forEach { segment ->
                         val start = segment.startMs.coerceIn(0L, durationMs).toFloat() / durationMs
                         val end = segment.endMs.coerceIn(0L, durationMs).toFloat() / durationMs
                         if (end > start) {
                             drawRect(
-                                color = speakerColor(index),
+                                color = speakerColor(segment.speaker),
                                 topLeft = Offset(size.width * start, 8f),
                                 size = Size(size.width * (end - start), size.height - 16f),
                             )
@@ -326,14 +326,22 @@ private fun AudioPlayer(uri: android.net.Uri, transcript: Transcript?) {
     }
 }
 
-private fun speakerColor(index: Int): Color {
+private fun speakerColor(speaker: String): Color {
+    val number = Regex("speaker_(\\d+)").find(speaker)?.groupValues?.get(1)?.toIntOrNull()
     val colors = listOf(
-        Color(0xFF5E81AC),
-        Color(0xFFA3BE8C),
-        Color(0xFFD08770),
-        Color(0xFFB48EAD),
+        Color(0xFFE05252), // speaker 1: red
+        Color(0xFF4C8DDE), // speaker 2: blue
+        Color(0xFF4FAF72), // speaker 3: green
+        Color(0xFFE39A3B), // speaker 4: orange
+        Color(0xFF9B6BD6), // speaker 5: purple
     )
-    return colors[index % colors.size].copy(alpha = 0.78f)
+    return if (number != null && number >= 1 && number <= colors.size) {
+        colors[number - 1].copy(alpha = 0.82f)
+    } else if ((number ?: 6) % 2 == 0) {
+        Color(0xFFB85C5C).copy(alpha = 0.72f)
+    } else {
+        Color(0xFFE05252).copy(alpha = 0.82f)
+    }
 }
 
 private fun formatClock(milliseconds: Long): String {
