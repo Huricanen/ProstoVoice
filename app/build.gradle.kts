@@ -21,16 +21,27 @@ android {
         }
     }
 
-    externalNativeBuild {
-        cmake {
-            path = file("src/main/cpp/CMakeLists.txt")
-            version = "3.22.1"
+    signingConfigs {
+        create("release") {
+            val keystore = file("../release-keystore.jks")
+            storeFile = keystore
+            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "prostovoice"
+            keyAlias = System.getenv("KEY_ALIAS") ?: "prostovoice"
+            keyPassword = System.getenv("KEY_PASSWORD") ?: "prostovoice"
         }
     }
 
     buildTypes {
-        release {
+        debug {
+            isDebuggable = true
             isMinifyEnabled = false
+            isShrinkResources = false
+        }
+        release {
+            isDebuggable = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -57,6 +68,11 @@ android {
     sourceSets["main"].assets.srcDir(rootProject.file("models/whisper"))
     androidResources {
         noCompress += listOf("bin")
+    }
+
+    lint {
+        abortOnError = true
+        warningsAsErrors = false
     }
 }
 
