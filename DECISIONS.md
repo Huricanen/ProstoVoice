@@ -100,6 +100,13 @@
 - **Основание:** текст ошибки Android прямо указывает на незавершённый `setProgressAsync` при возврате результата.
 - **Последствия:** notification обновляется примерно раз в 500 мс, а не на каждый callback.
 
+### 2026-11-07 — заменить speaker embedding на WeSpeaker VoxCeleb ResNet34
+
+- **Контекст:** ERes2Net 3D-Speaker давал нестабильное назначение реплик участникам на русских многоголосых записях; segmentation уже использовал pyannote 3.0 через sherpa-onnx.
+- **Решение:** оставить sherpa-onnx и pyannote segmentation, заменить только embedding-модель на официальный `wespeaker_en_voxceleb_resnet34.onnx` из release `speaker-recongition-models`.
+- **Основание:** модель совместима с sherpa embedding loader, содержит metadata `framework=wespeaker`, `sample_rate=16000`, обучена на VoxCeleb и не является китайским 3D-Speaker export.
+- **Последствия:** размер embedding asset уменьшен примерно с 39.6 MB до 26.5 MB; качество на конкретных русских записях нужно подтвердить сравнительным прогоном.
+
 ### 2026-11-06 — принять JSON-контракт презентации
 
 - **Контекст:** текущий внутренний экспорт использовал имена полей Kotlin-модели.
