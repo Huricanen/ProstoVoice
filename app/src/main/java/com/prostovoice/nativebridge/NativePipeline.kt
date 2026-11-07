@@ -65,6 +65,22 @@ object NativePipeline {
         }
     }
 
+    fun extractWindowEmbeddings(
+        pcm: FloatArray,
+        sampleRate: Int,
+        embeddingModelPath: String,
+        windowMs: Int = 1_500,
+        stepMs: Int = 500,
+    ): String {
+        require(sampleRate > 0)
+        require(embeddingModelPath.isNotBlank())
+        require(pcm.isNotEmpty())
+        require(windowMs > 0 && stepMs > 0)
+        return checkAvailable {
+            nativeExtractWindowEmbeddings(pcm, sampleRate, embeddingModelPath, windowMs, stepMs)
+        }
+    }
+
     private fun <T> checkAvailable(block: () -> T): T {
         check(loaded) { "Native pipeline is unavailable; use the Kotlin fallback" }
         return block()
@@ -88,5 +104,13 @@ object NativePipeline {
         windowShiftRatio: Float,
         minDurationOnSeconds: Float,
         minDurationOffSeconds: Float,
+    ): String
+
+    private external fun nativeExtractWindowEmbeddings(
+        pcm: FloatArray,
+        sampleRate: Int,
+        embeddingModelPath: String,
+        windowMs: Int,
+        stepMs: Int,
     ): String
 }

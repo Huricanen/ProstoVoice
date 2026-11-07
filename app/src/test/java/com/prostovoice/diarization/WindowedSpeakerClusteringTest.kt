@@ -1,0 +1,20 @@
+package com.prostovoice.diarization
+
+import org.junit.Assert.assertEquals
+import org.junit.Test
+
+class WindowedSpeakerClusteringTest {
+    @Test
+    fun `clusters short windows and merges adjacent same speaker`() {
+        val result = WindowedSpeakerClustering.cluster(
+            listOf(
+                WindowEmbedding(0, 1500, floatArrayOf(1f, 0f)),
+                WindowEmbedding(500, 2000, floatArrayOf(0.99f, 0.01f)),
+                WindowEmbedding(2000, 3500, floatArrayOf(0f, 1f)),
+            ),
+            requestedClusters = 2,
+        )
+        assertEquals(listOf("speaker_1", "speaker_2"), result.map { it.speaker })
+        assertEquals(2000L, result.last().startMs)
+    }
+}

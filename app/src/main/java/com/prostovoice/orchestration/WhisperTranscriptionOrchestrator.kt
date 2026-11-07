@@ -7,9 +7,12 @@ import com.prostovoice.audio.MediaCodecAudioDecoder
 import com.prostovoice.audio.PcmAudioChunk
 import com.prostovoice.audio.AudioChunker
 import com.prostovoice.domain.AsrSegment
+import com.prostovoice.domain.SpeakerSegment
 import com.prostovoice.domain.Transcript
 import com.prostovoice.domain.TranscriptAligner
 import com.prostovoice.nativebridge.NativePipeline
+import com.prostovoice.diarization.WindowEmbedding
+import com.prostovoice.diarization.WindowedSpeakerClustering
 import kotlinx.coroutines.flow.collect
 import org.json.JSONObject
 
@@ -63,24 +66,44 @@ class WhisperTranscriptionOrchestrator(
         val deduplicatedAsr = AudioChunker.deduplicateAsrSegments(asr)
         Log.i(TAG, "Whisper finished in ${(System.nanoTime() - startedAt) / 1_000_000} ms across ${inferenceChunks.size} chunks")
         val durationMs = samples.size * 1_000L / 16_000L
-        val speakerSegments = runCatching {
+        val speakerSegments: List<SpeakerSegment> = runCatching {
             onProgress(0.80f, "Разделение по говорящим")
-            val segmentation = WhisperModelStore(context, SEGMENTATION_MODEL).ensureModel()
             val embedding = WhisperModelStore(context, EMBEDDING_MODEL).ensureModel()
-            val diarization = JSONObject(
-                NativePipeline.diarizePcm(samples, 16_000, segmentation.absolutePath, embedding.absolutePath),
+            val windowed = JSONObject(
+                NativePipeline.extractWindowEmbeddings(samples, 16_000, embedding.absolutePath),
             )
-            check(diarization.optString("status") == "ok")
-            val rawSegments = buildList {
-                val segments = diarization.optJSONArray("segments") ?: return@buildList
-                for (index in 0 until segments.length()) {
-                    val item = segments.getJSONObject(index)
-                    add(com.prostovoice.domain.SpeakerSegment(
-                        item.optString("speaker"), item.optLong("start_ms"), item.optLong("end_ms"),
+            check(windowed.optString("status") == "ok")
+            val windows = buildList {
+                val items = windowed.optJSONArray("windows") ?: return@buildList
+                for (index in 0 until items.length()) {
+                    val item = items.getJSONObject(index)
+                    val values = item.optJSONArray("values") ?: continue
+                    add(WindowEmbedding(
+                        item.optLong("start_ms"), item.optLong("end_ms"),
+                        FloatArray(values.length()) { values.optDouble(it).toFloat() },
                     ))
                 }
             }
-            TranscriptAligner.normalizeSpeakerLabels(rawSegments)
+            val windowedSegments = WindowedSpeakerClustering.cluster(windows, 4)
+            if (windowedSegments.isNotEmpty()) {
+                windowedSegments
+            } else {
+                val segmentation = WhisperModelStore(context, SEGMENTATION_MODEL).ensureModel()
+                val diarization = JSONObject(
+                    NativePipeline.diarizePcm(samples, 16_000, segmentation.absolutePath, embedding.absolutePath),
+                )
+                check(diarization.optString("status") == "ok")
+                val rawSegments = buildList {
+                    val segments = diarization.optJSONArray("segments") ?: return@buildList
+                    for (index in 0 until segments.length()) {
+                        val item = segments.getJSONObject(index)
+                        add(SpeakerSegment(
+                            item.optString("speaker"), item.optLong("start_ms"), item.optLong("end_ms"),
+                        ))
+                    }
+                }
+                TranscriptAligner.normalizeSpeakerLabels(rawSegments)
+            }
         }.getOrElse { error ->
             Log.w(TAG, "Diarization unavailable; using UNKNOWN speakers", error)
             emptyList()

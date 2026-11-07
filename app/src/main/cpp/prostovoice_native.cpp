@@ -212,3 +212,66 @@ Java_com_prostovoice_nativebridge_NativePipeline_nativeDiarizePcm(
                         "Diarization completed successfully");
     return ToString(env, json);
 }
+
+extern "C" JNIEXPORT jstring JNICALL
+Java_com_prostovoice_nativebridge_NativePipeline_nativeExtractWindowEmbeddings(
+        JNIEnv* env, jobject /* self */, jfloatArray pcm, jint sample_rate,
+        jstring embedding_model_path, jint window_ms, jint step_ms) {
+    if (pcm == nullptr || env->GetArrayLength(pcm) == 0 || sample_rate <= 0 ||
+        embedding_model_path == nullptr || window_ms <= 0 || step_ms <= 0) {
+        return ToString(env, "{\"status\":\"invalid_input\",\"engine\":\"sherpa-onnx\"}");
+    }
+    const jsize sample_count = env->GetArrayLength(pcm);
+    const int window_samples = static_cast<int>(sample_rate * window_ms / 1000LL);
+    const int step_samples = static_cast<int>(sample_rate * step_ms / 1000LL);
+    if (window_samples <= 0 || step_samples <= 0 || sample_count < window_samples) {
+        return ToString(env, "{\"status\":\"invalid_input\",\"engine\":\"sherpa-onnx\"}");
+    }
+    const char* model = env->GetStringUTFChars(embedding_model_path, nullptr);
+    SherpaOnnxSpeakerEmbeddingExtractorConfig config{};
+    config.model = model;
+    config.num_threads = 2;
+    config.provider = "cpu";
+    const auto* extractor = SherpaOnnxCreateSpeakerEmbeddingExtractor(&config);
+    env->ReleaseStringUTFChars(embedding_model_path, model);
+    if (extractor == nullptr) {
+        return ToString(env, "{\"status\":\"model_load_failed\",\"engine\":\"sherpa-onnx\"}");
+    }
+    jfloat* samples = env->GetFloatArrayElements(pcm, nullptr);
+    const int dimension = SherpaOnnxSpeakerEmbeddingExtractorDim(extractor);
+    std::string json = "{\"status\":\"ok\",\"window_ms\":" + std::to_string(window_ms) + ",\"step_ms\":" + std::to_string(step_ms) + ",\"windows\":[";
+    bool first = true;
+    for (int start = 0; start + window_samples <= sample_count; start += step_samples) {
+        double energy = 0.0;
+        for (int i = 0; i < window_samples; ++i) energy += samples[start + i] * samples[start + i];
+        if (energy / window_samples < 0.00005) continue;
+        const auto* stream = SherpaOnnxSpeakerEmbeddingExtractorCreateStream(extractor);
+        SherpaOnnxOnlineStreamAcceptWaveform(stream, sample_rate, samples + start, window_samples);
+        SherpaOnnxOnlineStreamInputFinished(stream);
+        if (!SherpaOnnxSpeakerEmbeddingExtractorIsReady(extractor, stream)) {
+            SherpaOnnxDestroyOnlineStream(stream);
+            continue;
+        }
+        const float* embedding = SherpaOnnxSpeakerEmbeddingExtractorComputeEmbedding(extractor, stream);
+        if (!embedding) {
+            SherpaOnnxDestroyOnlineStream(stream);
+            continue;
+        }
+        if (!first) json += ',';
+        first = false;
+        json += "{\"start_ms\":" + std::to_string(start * 1000LL / sample_rate) +
+                ",\"end_ms\":" + std::to_string((start + window_samples) * 1000LL / sample_rate) +
+                ",\"values\":[";
+        for (int i = 0; i < dimension; ++i) {
+            if (i > 0) json += ',';
+            json += std::to_string(embedding[i]);
+        }
+        json += "]}";
+        SherpaOnnxSpeakerEmbeddingExtractorDestroyEmbedding(embedding);
+        SherpaOnnxDestroyOnlineStream(stream);
+    }
+    env->ReleaseFloatArrayElements(pcm, samples, JNI_ABORT);
+    SherpaOnnxDestroySpeakerEmbeddingExtractor(extractor);
+    json += "]}";
+    return ToString(env, json);
+}
