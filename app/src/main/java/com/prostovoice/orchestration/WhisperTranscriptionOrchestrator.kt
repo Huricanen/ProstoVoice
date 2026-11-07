@@ -84,7 +84,8 @@ class WhisperTranscriptionOrchestrator(
                     ))
                 }
             }
-            val windowedSegments = WindowedSpeakerClustering.cluster(windows, 4)
+            val maxClusters = if (durationMs < 45_000L) 2 else 4
+            val windowedSegments = WindowedSpeakerClustering.cluster(windows, maxClusters)
             if (windowedSegments.isNotEmpty()) {
                 windowedSegments
             } else {
