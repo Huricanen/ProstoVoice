@@ -111,25 +111,35 @@ private fun ProstoVoiceApp() {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(if (state.transcript == null) 0.dp else 64.dp)
+                                .height(
+                                    when {
+                                        state.transcript == null -> 0.dp
+                                        exportExpanded -> 128.dp
+                                        else -> 80.dp
+                                    },
+                                )
                                 .background(Color.Transparent),
                             contentAlignment = Alignment.BottomEnd,
                         ) {
-                            state.transcript?.let { transcript ->
-                                ExportActions(
-                                    expanded = exportExpanded,
-                                    onToggle = { exportExpanded = !exportExpanded },
-                                    onTxt = {
-                                        pendingExport = transcript.toTxt()
-                                        exportLauncher.launch("${transcript.sourceName}.txt")
-                                        exportExpanded = false
-                                    },
-                                    onJson = {
-                                        pendingExport = transcript.toJson()
-                                        jsonExportLauncher.launch("${transcript.sourceName}.json")
-                                        exportExpanded = false
-                                    },
-                                )
+                            Box(
+                                modifier = Modifier.padding(bottom = 12.dp),
+                            ) {
+                                state.transcript?.let { transcript ->
+                                    ExportActions(
+                                        expanded = exportExpanded,
+                                        onToggle = { exportExpanded = !exportExpanded },
+                                        onTxt = {
+                                            pendingExport = transcript.toTxt()
+                                            exportLauncher.launch("${transcript.sourceName}.txt")
+                                            exportExpanded = false
+                                        },
+                                        onJson = {
+                                            pendingExport = transcript.toJson()
+                                            jsonExportLauncher.launch("${transcript.sourceName}.json")
+                                            exportExpanded = false
+                                        },
+                                    )
+                                }
                             }
                         }
                         state.selectedUri?.let { uri ->
