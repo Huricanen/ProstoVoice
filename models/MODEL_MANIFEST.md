@@ -27,11 +27,11 @@ an uncompressed APK asset, and extracts it to app-private storage on first use.
 - SHA-256: `D582F4B4C6B48205DE7E0643C57DF0DF5615A3C176189BE3FC461E9D18827B5D`
 - Status: sherpa-onnx release export downloaded on 2026-11-06; includes the metadata required by the pyannote loader.
 
-- Speaker embedding: `models/diarization/wespeaker-en-voxceleb-resnet34.onnx`
-- Source: `https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-recongition-models/wespeaker_en_voxceleb_resnet34.onnx`
-- Size: 26,534,365 bytes
-- SHA-256: `5EF208A9DA1453335308A6B6F4E6DFBD7E183A38B604DE0A57664F45D257FE94`
-- License/provenance: official sherpa-onnx speaker-recognition release; model metadata identifies framework `wespeaker`, language `English`, and sample rate `16000`.
-- Status: downloaded on 2026-11-07; Android runtime validation pending.
+- Speaker embedding: `models/diarization/eres2net-base-3dspeaker-16k.onnx`
+- Source: `https://huggingface.co/onemira/eres2net-base-3dspeaker-onnx`
+- Size: 39,593,761 bytes
+- SHA-256: `1A331345F04805BADBB495C775A6DDFFCDD1A732567D5EC8B3D5749E3C7A5E4B`
+- License/provenance: Apache-2.0, sherpa-onnx distribution; LICENSE and NOTICE are retained by the source repository.
+- Status: restored as runtime baseline on 2026-11-07 after WeSpeaker produced one cluster with the current threshold; alternative remains under `models/optional`.
 
 The speaker embedding model and runtime remain subject to on-device validation.

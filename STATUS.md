@@ -59,6 +59,7 @@
 - [ ] Попытка word-level alignment через Whisper token timestamps отозвана после регрессии качества на новых записях; текущая рабочая ветка использует segment-level alignment с нормализацией labels.
 - [x] 2026-11-07: progress updates worker сериализованы через периодический monitor; исправлена гонка `setProgressAsync()` при завершении worker.
 - [x] 2026-11-07: embedding-модель заменена с ERes2Net 3D-Speaker на официальный `wespeaker_en_voxceleb_resnet34.onnx`; metadata проверены, APK пересобран и установлен на Poco X7. Качество на пользовательских записях ещё требует повторного сравнения.
+- [x] 2026-11-07: WeSpeaker откатирован после device-теста: при текущем FastClustering threshold результат схлопнулся в один speaker. ERes2Net возвращён как рабочий baseline; APK после отката требует сборки и установки.
 
 ## Зафиксированные входы от команды и ТЗ
 
