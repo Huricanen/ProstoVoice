@@ -63,3 +63,4 @@ __pycache__/
 # Large local model artifacts are provisioned separately from Git.
 models/
 !models/MODEL_MANIFEST.md
+.vscode/

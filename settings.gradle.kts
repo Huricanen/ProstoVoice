@@ -11,6 +11,9 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // Stable repository for sherpa-onnx Android artifacts
+        maven { url = uri("https://k2-fsa.github.io/sherpa/onnx/maven-repo/") }
+        maven { url = uri("https://jitpack.io") }
     }
 }
 

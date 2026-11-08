@@ -1,72 +1,61 @@
 package com.prostovoice.nativebridge
 
+import android.util.Log
+
 /**
- * Stable Kotlin boundary for the Whisper.cpp and sherpa-onnx adapters.
- *
- * The native library is optional during the Android skeleton phase. Callers can
- * inspect [isAvailable] and keep the Kotlin fallback when the JNI library is
- * not packaged yet.
+ * Safe Kotlin boundary for Native Whisper and Sherpa-ONNX.
  */
 object NativePipeline {
     private var loaded = false
+    private const val TAG = "NativePipeline"
 
     init {
-        loaded = runCatching {
+        try {
             System.loadLibrary("prostovoice_native")
-            true
-        }.getOrDefault(false)
-    }
-
-    val isAvailable: Boolean
-        get() = loaded
-
-    /** Returns a machine-readable status JSON for diagnostics and the UI. */
-    fun backendStatus(): String = if (loaded) nativeBackendStatus() else
-        "{\"status\":\"native_unavailable\",\"offline\":true}"
-
-    fun transcribePcm(
-        pcm: FloatArray,
-        sampleRate: Int,
-        modelPath: String,
-    ): String {
-        require(sampleRate > 0) { "sampleRate must be positive" }
-        require(modelPath.isNotBlank()) { "modelPath must not be blank" }
-        require(pcm.isNotEmpty()) { "pcm must not be empty" }
-        return checkAvailable { nativeTranscribePcm(pcm, sampleRate, modelPath) }
-    }
-
-    fun diarizePcm(
-        pcm: FloatArray,
-        sampleRate: Int,
-        segmentationModelPath: String,
-        embeddingModelPath: String,
-    ): String {
-        require(sampleRate > 0) { "sampleRate must be positive" }
-        require(segmentationModelPath.isNotBlank()) { "segmentationModelPath must not be blank" }
-        require(embeddingModelPath.isNotBlank()) { "embeddingModelPath must not be blank" }
-        require(pcm.isNotEmpty()) { "pcm must not be empty" }
-        return checkAvailable {
-        nativeDiarizePcm(pcm, sampleRate, segmentationModelPath, embeddingModelPath)
+            loaded = true
+            Log.i(TAG, "Native library loaded successfully")
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to load native library: ${t.message}")
+            loaded = false
         }
     }
 
-    private fun <T> checkAvailable(block: () -> T): T {
-        check(loaded) { "Native pipeline is unavailable; use the Kotlin fallback" }
-        return block()
+    val isAvailable: Boolean get() = loaded
+
+    fun backendStatus(): String = if (loaded) {
+        try {
+            nativeBackendStatus()
+        } catch (t: Throwable) {
+            "{\"status\":\"native_error\",\"message\":\"${t.message}\"}"
+        }
+    } else {
+        "{\"status\":\"native_unavailable\",\"offline\":true}"
     }
 
+    fun transcribePcm(pcm: FloatArray, sampleRate: Int, modelPath: String): String {
+        if (!loaded) return "{\"status\":\"error\",\"message\":\"Native library not available\"}"
+        return try {
+            nativeTranscribePcm(pcm, sampleRate, modelPath)
+        } catch (t: Throwable) {
+            "{\"status\":\"error\",\"message\":\"Inference crashed: ${t.message}\"}"
+        }
+    }
+
+    fun diarizePcm(pcm: FloatArray, sampleRate: Int, segPath: String, embPath: String): String {
+        if (!loaded) return "{\"status\":\"error\",\"message\":\"Native library not available\"}"
+        return try {
+            nativeDiarizePcm(pcm, sampleRate, segPath, embPath)
+        } catch (t: Throwable) {
+            "{\"status\":\"error\",\"message\":\"Diarization crashed: ${t.message}\"}"
+        }
+    }
+
+    @JvmStatic
     private external fun nativeBackendStatus(): String
-
-    private external fun nativeTranscribePcm(
-        pcm: FloatArray,
-        sampleRate: Int,
-        modelPath: String,
-    ): String
-
-    private external fun nativeDiarizePcm(
-        pcm: FloatArray,
-        sampleRate: Int,
-        segmentationModelPath: String,
-        embeddingModelPath: String,
-    ): String
+    
+    @JvmStatic
+    private external fun nativeTranscribePcm(pcm: FloatArray, rate: Int, path: String): String
+    
+    @JvmStatic
+    private external fun nativeDiarizePcm(pcm: FloatArray, rate: Int, segPath: String, embPath: String): String
 }

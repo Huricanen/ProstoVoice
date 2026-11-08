@@ -6,19 +6,22 @@ import androidx.work.CoroutineWorker
 import androidx.work.Data
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
-import com.prostovoice.orchestration.PlaceholderTranscriptionOrchestrator
+import com.prostovoice.modelmanager.ModelManager
+import com.prostovoice.orchestration.DefaultTranscriptionOrchestrator
+import com.prostovoice.orchestration.TranscriptionOrchestrator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
  * Background boundary for long-running transcription.
- * The native decoder/ASR/diarization pipeline will replace the placeholder
- * orchestrator without changing WorkManager's input/output contract.
  */
 class TranscriptionWorker(
     appContext: Context,
     workerParams: WorkerParameters,
 ) : CoroutineWorker(appContext, workerParams) {
+
+    private val modelManager = ModelManager(applicationContext)
+    private val orchestrator: TranscriptionOrchestrator = DefaultTranscriptionOrchestrator(applicationContext, modelManager)
 
     override suspend fun doWork(): Result = withContext(Dispatchers.Default) {
         val uriString = inputData.getString(KEY_AUDIO_URI)
@@ -27,7 +30,7 @@ class TranscriptionWorker(
             ?: return@withContext Result.failure(errorData("Некорректный URI аудиофайла"))
 
         setProgress(workDataOf(KEY_PROGRESS to 0))
-        runCatching { PlaceholderTranscriptionOrchestrator().transcribe(uri) }
+        runCatching { orchestrator.transcribe(uri) }
             .fold(
                 onSuccess = { transcript ->
                     setProgress(workDataOf(KEY_PROGRESS to 100))
