@@ -2,17 +2,35 @@
 
 ## Установка
 
-1. Установите APK `app-debug.apk` на Android-устройство или Android Studio эмулятор с ABI `arm64-v8a` либо `x86_64`.
+Готовый APK находится в GitHub-релизе проекта: [Releases](https://github.com/Huricanen/ProstoVoice/releases). Откройте последний релиз, скачайте файл `app-debug.apk` из раздела `Assets` и установите его на устройство. Сборка проекта для обычной установки не требуется.
+
+1. Установите скачанный `app-debug.apk` на Android-устройство или Android Studio эмулятор с ABI `arm64-v8a` либо `x86_64`.
 2. Запустите ProstoVoice.
 3. Разрешите уведомления, если приложение запросит разрешение: оно используется для фоновой обработки.
 
-Для сборки из исходников нужны JDK 17+, Android SDK, NDK `27.2.12479018` и CMake `3.22.1`:
+## Сборка из исходников
+
+Если нужен APK из текущего исходного кода, а не файл из релиза, потребуются JDK 17+, Android SDK, NDK `27.2.12479018` и CMake `3.22.1`:
 
 ```powershell
 ./gradlew.bat assembleDebug
 ```
 
 APK будет создан в `app/build/outputs/apk/debug/app-debug.apk`.
+
+## Вариация с каталогом моделей
+
+В репозитории есть отдельная экспериментальная ветка [`models`](https://github.com/Huricanen/ProstoVoice/tree/models). В ней добавлены каталог и локальный менеджер моделей: загрузка через WorkManager, импорт через системный picker, локальный реестр и варианты Whisper Small, Whisper Large v3 Turbo, Parakeet TDT 1.1B, GigaAM v3 и GigaAM v3 Multilingual.
+
+Чтобы собрать именно эту вариацию:
+
+```powershell
+git clone --branch models --single-branch https://github.com/Huricanen/ProstoVoice.git
+cd ProstoVoice
+./gradlew.bat assembleDebug
+```
+
+Готовый файл будет в `app/build/outputs/apk/debug/app-debug.apk`. APK из этой ветки нужно собирать отдельно: релизный APK из `main` не содержит её каталога моделей. Ветка `models` является экспериментальной и отстаёт от текущего `main`; перед использованием нужно учитывать её собственный статус и ограничения. В частности, импорт модели в этой ветке пока регистрирует файл до полноценной инициализации backend, а некоторые контрольные суммы каталога требуют проверки.
 
 ## Обработка записи
 
