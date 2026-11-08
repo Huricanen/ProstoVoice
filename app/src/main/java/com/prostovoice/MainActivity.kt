@@ -28,6 +28,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.prostovoice.domain.Transcript
 import com.prostovoice.export.toJson
 import com.prostovoice.export.toTxt
+import com.prostovoice.ui.ModelManagementScreen
 import com.prostovoice.ui.TranscriptionViewModel
 
 class MainActivity : ComponentActivity() {
@@ -42,6 +43,7 @@ private fun ProstoVoiceApp() {
     val viewModel: TranscriptionViewModel = viewModel()
     val state by viewModel.state.collectAsState()
     var pendingExport by remember { mutableStateOf<String?>(null) }
+    var showModels by remember { mutableStateOf(false) }
     val context = androidx.compose.ui.platform.LocalContext.current
     val picker = rememberLauncherForActivityResult(OpenDocument()) { uri ->
         uri?.let(viewModel::selectFile)
@@ -61,47 +63,57 @@ private fun ProstoVoiceApp() {
 
     MaterialTheme {
         Surface(modifier = Modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                Text("ProstoVoice", style = MaterialTheme.typography.headlineMedium)
-                Text("Локальная расшифровка аудиозаписей")
-                Button(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = { picker.launch(arrayOf("audio/*")) },
+            if (showModels) {
+                ModelManagementScreen(onBack = { showModels = false })
+            } else {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    Text("Выбрать аудиофайл")
-                }
-                state.selectedUri?.let { uri ->
-                    Text("Выбран файл: ${uri.lastPathSegment ?: uri}")
+                    Text("ProstoVoice", style = MaterialTheme.typography.headlineMedium)
+                    Text("Локальная расшифровка аудиозаписей")
                     Button(
                         modifier = Modifier.fillMaxWidth(),
-                        enabled = !state.isProcessing,
-                        onClick = viewModel::transcribe,
+                        onClick = { picker.launch(arrayOf("audio/*")) },
                     ) {
-                        Text("Запустить расшифровку")
+                        Text("Выбрать аудиофайл")
                     }
-                }
-                if (state.isProcessing) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        CircularProgressIndicator()
-                        Text("Обработка…")
+                    Button(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { showModels = true },
+                    ) {
+                        Text("Модели распознавания")
                     }
-                }
-                state.errorMessage?.let { Text("Ошибка: $it", color = MaterialTheme.colorScheme.error) }
-                state.transcript?.let { transcript ->
-                    TranscriptResult(
-                        transcript = transcript,
-                        onTxt = {
-                            pendingExport = transcript.toTxt()
-                            exportLauncher.launch("${transcript.sourceName}.txt")
-                        },
-                        onJson = {
-                            pendingExport = transcript.toJson()
-                            jsonExportLauncher.launch("${transcript.sourceName}.json")
-                        },
-                    )
+                    state.selectedUri?.let { uri ->
+                        Text("Выбран файл: ${uri.lastPathSegment ?: uri}")
+                        Button(
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !state.isProcessing,
+                            onClick = viewModel::transcribe,
+                        ) {
+                            Text("Запустить расшифровку")
+                        }
+                    }
+                    if (state.isProcessing) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            CircularProgressIndicator()
+                            Text("Обработка…")
+                        }
+                    }
+                    state.errorMessage?.let { Text("Ошибка: $it", color = MaterialTheme.colorScheme.error) }
+                    state.transcript?.let { transcript ->
+                        TranscriptResult(
+                            transcript = transcript,
+                            onTxt = {
+                                pendingExport = transcript.toTxt()
+                                exportLauncher.launch("${transcript.sourceName}.txt")
+                            },
+                            onJson = {
+                                pendingExport = transcript.toJson()
+                                jsonExportLauncher.launch("${transcript.sourceName}.json")
+                            },
+                        )
+                    }
                 }
             }
         }

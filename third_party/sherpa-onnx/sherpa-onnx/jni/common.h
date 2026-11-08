@@ -1,0 +1,287 @@
+// sherpa-onnx/jni/common.h
+//
+// Copyright (c)  2024  Xiaomi Corporation
+
+#ifndef SHERPA_ONNX_JNI_COMMON_H_
+#define SHERPA_ONNX_JNI_COMMON_H_
+
+#include <exception>  // NOLINT
+#include <string>
+
+#include "sherpa-onnx/csrc/macros.h"
+#include "sherpa-onnx/csrc/text-utils.h"
+
+#if __ANDROID_API__ >= 9
+#include <sstream>
+
+#include "android/asset_manager.h"
+#include "android/asset_manager_jni.h"
+#endif
+
+#if defined(_WIN32)
+#if defined(SHERPA_ONNX_BUILD_SHARED_LIBS)
+#define SHERPA_ONNX_EXPORT __declspec(dllexport)
+#define SHERPA_ONNX_IMPORT __declspec(dllimport)
+#else
+#define SHERPA_ONNX_EXPORT
+#define SHERPA_ONNX_IMPORT
+#endif
+#else  // WIN32
+#define SHERPA_ONNX_EXPORT __attribute__((visibility("default")))
+
+#define SHERPA_ONNX_IMPORT SHERPA_ONNX_EXPORT
+#endif  // WIN32
+
+#if defined(SHERPA_ONNX_BUILD_MAIN_LIB)
+#define SHERPA_ONNX_API SHERPA_ONNX_EXPORT
+#else
+#define SHERPA_ONNX_API SHERPA_ONNX_IMPORT
+#endif
+
+// If you use ndk, you can find "jni.h" inside
+// android-ndk/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include
+#include "jni.h"  // NOLINT
+
+#define SHERPA_ONNX_EXTERN_C extern "C" SHERPA_ONNX_API
+
+#define SHERPA_ONNX_JNI_READ_STRING(cpp_field, kotlin_field, cls, config)     \
+  do {                                                                        \
+    jfieldID fid = env->GetFieldID(cls, #kotlin_field, "Ljava/lang/String;"); \
+    if (fid == nullptr || env->ExceptionCheck()) {                            \
+      SHERPA_ONNX_LOGE("Failed to get field ID for '%s'", #kotlin_field);     \
+      SHERPA_ONNX_LOGE(                                                       \
+          "Please check that your kotlin code matches the library file "      \
+          "libsherpa-onnx-jni.so . If you are not sure, always use the "      \
+          "LATEST code and the latest library");                              \
+      if (env->ExceptionCheck()) {                                            \
+        env->ExceptionDescribe();                                             \
+        env->ExceptionClear();                                                \
+      }                                                                       \
+      jclass exClass = env->FindClass("java/lang/RuntimeException");          \
+      if (exClass) {                                                          \
+        env->ThrowNew(exClass, "Failed to get field ID for " #kotlin_field);  \
+        env->DeleteLocalRef(exClass);                                         \
+      }                                                                       \
+      return ans;                                                             \
+    }                                                                         \
+    jstring s = (jstring)env->GetObjectField(config, fid);                    \
+    if (s != nullptr) {                                                       \
+      const char *p = env->GetStringUTFChars(s, nullptr);                     \
+      cpp_field = p;                                                          \
+      env->ReleaseStringUTFChars(s, p);                                       \
+      env->DeleteLocalRef(s);                                                 \
+    }                                                                         \
+  } while (0)
+
+#define SHERPA_ONNX_JNI_READ_FLOAT(cpp_field, kotlin_field, cls, config)     \
+  do {                                                                       \
+    jfieldID fid = env->GetFieldID(cls, #kotlin_field, "F");                 \
+    if (fid == nullptr || env->ExceptionCheck()) {                           \
+      SHERPA_ONNX_LOGE("Failed to get field ID for '%s'", #kotlin_field);    \
+      SHERPA_ONNX_LOGE(                                                      \
+          "Please check that your kotlin code matches the library file "     \
+          "libsherpa-onnx-jni.so . If you are not sure, always use the "     \
+          "LATEST code and the latest library");                             \
+      if (env->ExceptionCheck()) {                                           \
+        env->ExceptionDescribe();                                            \
+        env->ExceptionClear();                                               \
+      }                                                                      \
+      jclass exClass = env->FindClass("java/lang/RuntimeException");         \
+      if (exClass) {                                                         \
+        env->ThrowNew(exClass, "Failed to get field ID for " #kotlin_field); \
+        env->DeleteLocalRef(exClass);                                        \
+      }                                                                      \
+      return ans;                                                            \
+    }                                                                        \
+    cpp_field = env->GetFloatField(config, fid);                             \
+  } while (0)
+
+#define SHERPA_ONNX_JNI_READ_INT(cpp_field, kotlin_field, cls, config)       \
+  do {                                                                       \
+    jfieldID fid = env->GetFieldID(cls, #kotlin_field, "I");                 \
+    if (fid == nullptr || env->ExceptionCheck()) {                           \
+      SHERPA_ONNX_LOGE("Failed to get field ID for '%s'", #kotlin_field);    \
+      SHERPA_ONNX_LOGE(                                                      \
+          "Please check that your kotlin code matches the library file "     \
+          "libsherpa-onnx-jni.so . If you are not sure, always use the "     \
+          "LATEST code and the latest library");                             \
+      if (env->ExceptionCheck()) {                                           \
+        env->ExceptionDescribe();                                            \
+        env->ExceptionClear();                                               \
+      }                                                                      \
+      jclass exClass = env->FindClass("java/lang/RuntimeException");         \
+      if (exClass) {                                                         \
+        env->ThrowNew(exClass, "Failed to get field ID for " #kotlin_field); \
+        env->DeleteLocalRef(exClass);                                        \
+      }                                                                      \
+      return ans;                                                            \
+    }                                                                        \
+    cpp_field = env->GetIntField(config, fid);                               \
+  } while (0)
+
+#define SHERPA_ONNX_JNI_READ_BOOL(cpp_field, kotlin_field, cls, config)      \
+  do {                                                                       \
+    jfieldID fid = env->GetFieldID(cls, #kotlin_field, "Z");                 \
+    if (fid == nullptr || env->ExceptionCheck()) {                           \
+      SHERPA_ONNX_LOGE("Failed to get field ID for '%s'", #kotlin_field);    \
+      SHERPA_ONNX_LOGE(                                                      \
+          "Please check that your kotlin code matches the library file "     \
+          "libsherpa-onnx-jni.so . If you are not sure, always use the "     \
+          "LATEST code and the latest library");                             \
+      if (env->ExceptionCheck()) {                                           \
+        env->ExceptionDescribe();                                            \
+        env->ExceptionClear();                                               \
+      }                                                                      \
+      jclass exClass = env->FindClass("java/lang/RuntimeException");         \
+      if (exClass) {                                                         \
+        env->ThrowNew(exClass, "Failed to get field ID for " #kotlin_field); \
+        env->DeleteLocalRef(exClass);                                        \
+      }                                                                      \
+      return ans;                                                            \
+    }                                                                        \
+    cpp_field = env->GetBooleanField(config, fid);                           \
+  } while (0)
+
+// defined in jni.cc
+jobject NewInteger(JNIEnv *env, int32_t value);
+jobject NewFloat(JNIEnv *env, float value);
+
+// Create a Java string from UTF-8 text. Invalid UTF-8 byte sequences are
+// stripped first. This prevents JNI crashes when the ASR model outputs
+// invalid UTF-8 (e.g., orphaned UTF-16 surrogate halves from the Arabic
+// moonshine model).
+//
+// NewStringUTF is not used since it expects modified UTF-8. Given a 4-byte
+// sequence (a code point above U+FFFF, e.g., an emoji), it returns garbage
+// and drops characters at the end of the string.
+inline jstring SafeNewStringUTF(JNIEnv *env, const std::string &s) {
+  std::u16string u16 =
+      sherpa_onnx::Utf8ToUtf16(sherpa_onnx::RemoveInvalidUtf8Sequences(s));
+  static_assert(sizeof(jchar) == sizeof(char16_t), "jchar must be 16-bit");
+  return env->NewString(reinterpret_cast<const jchar *>(u16.data()),
+                        static_cast<jsize>(u16.size()));
+}
+
+inline jstring SafeNewStringUTF(JNIEnv *env, const char *s) {
+  if (!s) return env->NewStringUTF("");
+  return SafeNewStringUTF(env, std::string(s));
+}
+
+// Convert a Java string to standard UTF-8.
+//
+// Unlike GetStringUTFChars, which returns modified UTF-8 and encodes a code
+// point above U+FFFF (e.g., an emoji) as two 3-byte surrogates instead of
+// one 4-byte sequence, this returns valid UTF-8. An unpaired surrogate is
+// replaced with U+FFFD.
+inline std::string JStringToUtf8(JNIEnv *env, jstring s) {
+  if (!s) return {};
+
+  jsize n = env->GetStringLength(s);
+  if (n == 0) return {};
+
+  std::u16string u16(n, u'\0');
+  static_assert(sizeof(jchar) == sizeof(char16_t), "jchar must be 16-bit");
+  env->GetStringRegion(s, 0, n, reinterpret_cast<jchar *>(&u16[0]));
+
+  return sherpa_onnx::Utf16ToUtf8(u16);
+}
+
+// Template function for non-void return types
+template <typename Func, typename ReturnType>
+ReturnType SafeJNI(JNIEnv *env, const char *functionName, Func func,
+                   ReturnType defaultValue) {
+  try {
+    return func();
+  } catch (const std::exception &e) {
+    jclass exClass = env->FindClass("java/lang/RuntimeException");
+    if (exClass != nullptr) {
+      std::string errorMessage = std::string(functionName) + ": " + e.what();
+      env->ThrowNew(exClass, errorMessage.c_str());
+      env->DeleteLocalRef(exClass);
+    }
+  } catch (...) {
+    jclass exClass = env->FindClass("java/lang/RuntimeException");
+    if (exClass != nullptr) {
+      std::string errorMessage = std::string(functionName) +
+                                 ": Native exception: caught unknown exception";
+      env->ThrowNew(exClass, errorMessage.c_str());
+      env->DeleteLocalRef(exClass);
+    }
+  }
+  return defaultValue;
+}
+
+// Specialization for void return type
+template <typename Func>
+void SafeJNI(JNIEnv *env, const char *functionName, Func func) {
+  try {
+    func();
+  } catch (const std::exception &e) {
+    jclass exClass = env->FindClass("java/lang/RuntimeException");
+    if (exClass != nullptr) {
+      std::string errorMessage = std::string(functionName) + ": " + e.what();
+      env->ThrowNew(exClass, errorMessage.c_str());
+      env->DeleteLocalRef(exClass);
+    }
+  } catch (...) {
+    jclass exClass = env->FindClass("java/lang/RuntimeException");
+    if (exClass != nullptr) {
+      std::string errorMessage = std::string(functionName) +
+                                 ": Native exception: caught unknown exception";
+      env->ThrowNew(exClass, errorMessage.c_str());
+      env->DeleteLocalRef(exClass);
+    }
+  }
+}
+
+// Helper function to validate JNI pointers
+inline bool ValidatePointer(JNIEnv *env, jlong ptr, const char *functionName,
+                            const char *message) {
+  if (ptr == 0) {
+    jclass exClass = env->FindClass("java/lang/NullPointerException");
+    if (exClass != nullptr) {
+      std::string errorMessage = std::string(functionName) + ": " + message;
+      env->ThrowNew(exClass, errorMessage.c_str());
+      env->DeleteLocalRef(exClass);
+    }
+    return false;
+  }
+  return true;
+}
+
+namespace sherpa_onnx {
+void PrependAdspLibraryPath(const std::string &new_path);
+}
+
+
+// Convert a C++ exception caught in a JNI function into a Java exception, so
+// callers on the Kotlin/Java side can catch it. Without this, an exception
+// escaping a JNI boundary calls std::terminate and aborts the process (e.g. an
+// Ort::Exception raised while loading a corrupt model file).
+inline void RethrowCxxExceptionAsJava(JNIEnv *env, const std::exception &e,
+                                      const char *context) {
+  SHERPA_ONNX_LOGE("%s: %s", context, e.what());
+  // JNI string functions expect modified UTF-8; an arbitrary what() buffer is
+  // not guaranteed to be valid, and ThrowNew with malformed input is
+  // undefined at the boundary. Fall back to the (ASCII, literal) context when
+  // the message is not printable ASCII, so the Java side always gets a valid
+  // string; the full message is preserved in the log line above.
+  const char *msg = e.what();
+  bool printable = msg[0] != '\0';
+  for (const char *p = msg; *p; ++p) {
+    unsigned char c = static_cast<unsigned char>(*p);
+    if (c < 0x20 || c > 0x7e) {
+      printable = false;
+      break;
+    }
+  }
+  jclass exception_class = env->FindClass("java/lang/Exception");
+  if (exception_class == nullptr) {
+    // FindClass itself failed; nothing more we can do here.
+    return;
+  }
+  env->ThrowNew(exception_class, printable ? msg : context);
+  env->DeleteLocalRef(exception_class);
+}
+
+#endif  // SHERPA_ONNX_JNI_COMMON_H_
