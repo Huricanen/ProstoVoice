@@ -26,6 +26,12 @@ set(SHERPA_ONNX_ENABLE_SPEAKER_DIARIZATION ON CACHE BOOL "" FORCE)
 set(SHERPA_ONNX_ENABLE_C_API ON CACHE BOOL "" FORCE)
 set(SHERPA_ONNX_ENABLE_JNI OFF CACHE BOOL "" FORCE)
 set(SHERPA_ONNX_USE_PRE_INSTALLED_ONNXRUNTIME_IF_AVAILABLE OFF CACHE BOOL "" FORCE)
+# Keep sherpa-onnx's small fbank dependency in the repository.  This avoids
+# a network fetch during ABI configuration, which is especially fragile for
+# fresh x86_64 Android Studio emulator builds.
+set(FETCHCONTENT_SOURCE_DIR_KALDI_NATIVE_FBANK
+    "${CMAKE_CURRENT_LIST_DIR}/../../../../third_party/kaldi-native-fbank"
+    CACHE PATH "Local kaldi-native-fbank source" FORCE)
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../../../../third_party/whisper.cpp whisper-build EXCLUDE_FROM_ALL)
 add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../../../../third_party/sherpa-onnx sherpa-onnx-build EXCLUDE_FROM_ALL)
 

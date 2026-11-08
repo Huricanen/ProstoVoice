@@ -1,0 +1,60 @@
+name: test-wheel
+
+on:
+  push:
+    branches:
+      - test-wheel
+      - master
+
+  workflow_dispatch:
+
+  schedule:
+    # minute (0-59)
+    # hour (0-23)
+    # day of the month (1-31)
+    # month (1-12)
+    # day of the week (0-6)
+    # nightly build at 23:50 UTC time every day
+    - cron: "50 23 * * *"
+
+concurrency:
+  group: test-wheel-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+
+jobs:
+  test_wheel:
+    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.os }} / py${{ matrix.python-version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # ubuntu-latest (26.04) no longer ships Python 3.8/3.9; use
+        # ubuntu-22.04 so the full python matrix is available.
+        os: [windows-latest, macos-latest, ubuntu-22.04]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.15"]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install kaldi-native-fbank
+        shell: bash
+        run: |
+          python3 -m pip install --upgrade pip numpy
+          python3 -m pip install kaldi-native-fbank
+
+      - name: Display version
+        shell: bash
+        run: |
+          python3 -c "import kaldi_native_fbank; print(kaldi_native_fbank.__file__)"
+          python3 -c "import kaldi_native_fbank; print(kaldi_native_fbank.__version__)"
